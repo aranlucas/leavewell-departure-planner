@@ -6,6 +6,7 @@ export const SAMPLE_COUNT = 4096;
 export const SEED = 0x1eaf2026;
 interface PreparedStep extends Step {
   schedule: number[];
+  finishBy: number | null;
 }
 export interface PreparedPlan {
   steps: PreparedStep[];
@@ -17,6 +18,8 @@ export interface TimelineRow {
   step: Step;
   start: number;
   end: number;
+  completed: number;
+  finishBy: number | null;
   ready: number;
   departure: number | null;
   cutoff: number | null;
@@ -25,6 +28,7 @@ export interface TimelineRow {
 export interface ForwardResult {
   arrival: number;
   rows: TimelineRow[];
+  missedCutoffs: string[];
 }
 export interface Sensitivity {
   id: string;
@@ -106,7 +110,19 @@ export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
         throw new Error(`${step.label}: ${(error as Error).message}`);
       }
     }
-    return { ...step, schedule };
+    let finishBy: number | null = null;
+    if (step.finishByLocal) {
+      try {
+        finishBy = parseTime(
+          step.finishByLocal,
+          scenario.timeZone,
+          scenario.disambiguation,
+        );
+      } catch (error) {
+        throw new Error(`${step.label} finish-by: ${(error as Error).message}`);
+      }
+    }
+    return { ...step, schedule, finishBy };
   });
   return {
     steps,
@@ -121,7 +137,10 @@ export function backward(prepared: PreparedPlan, durations: number[]): number {
   let latest = prepared.deadline;
   for (let j = prepared.steps.length - 1; j >= 0; j--) {
     const s = prepared.steps[j];
-    latest -= (durations[j] + s.buffer) * MINUTE;
+    // The checkpoint bounds completion; the fixed buffer happens afterward.
+    latest =
+      Math.min(latest - s.buffer * MINUTE, s.finishBy ?? Infinity) -
+      durations[j] * MINUTE;
     if (s.kind === "transit") {
       let departure = -Infinity;
       for (let k = s.schedule.length - 1; k >= 0; k--)
@@ -142,6 +161,7 @@ export function forward(
 ): ForwardResult {
   let current = leave;
   const rows: TimelineRow[] = [];
+  const missedCutoffs: string[] = [];
   for (let j = 0; j < prepared.steps.length; j++) {
     const s = prepared.steps[j];
     const ready = current;
@@ -155,18 +175,24 @@ export function forward(
       current = departure;
     }
     const start = current;
-    current += (durations[j] + s.buffer) * MINUTE;
+    const completed = current + durations[j] * MINUTE;
+    current = completed + s.buffer * MINUTE;
+    // Allow only sub-millisecond floating-point roundoff at inclusive equality.
+    if (s.finishBy !== null && completed > s.finishBy + 0.01)
+      missedCutoffs.push(s.id);
     rows.push({
       step: s,
       start,
       end: current,
+      completed,
+      finishBy: s.finishBy,
       ready,
       departure,
       cutoff,
       wait: (start - ready) / MINUTE,
     });
   }
-  return { arrival: current, rows };
+  return { arrival: current, rows, missedCutoffs };
 }
 
 /** Inclusive lower-tail order statistic: at least ceil(p*n) sampled latest times >= d. */
@@ -212,9 +238,15 @@ export function analyze(
   try {
     const prepared = prepare(scenario, plan);
     const rng = random(SEED);
-    const durations = Array.from({ length: count }, () =>
-      prepared.steps.map((s) => triangular(s.min, s.mode, s.max, rng())),
-    );
+    const linkageRng = random(SEED ^ 0x57e55);
+    const durations = Array.from({ length: count }, () => {
+      const linked = linkageRng() < (scenario.linkedDelays ?? 0);
+      const shared = linkageRng();
+      return prepared.steps.map((s) => {
+        const independent = rng(); // Keep the original draw stream at every setting.
+        return triangular(s.min, s.mode, s.max, linked ? shared : independent);
+      });
+    });
     const samples = durations.map((ds) => backward(prepared, ds));
     const recommendation = departureQuantile(samples, scenario.confidence);
     const typical = backward(
@@ -322,4 +354,24 @@ export function histogram(
     (v) => counts[Math.min(bins - 1, Math.floor(((v - min) / width) * bins))]++,
   );
   return { min, max: Math.max(max, min + MINUTE), counts };
+}
+
+/** Each checkpoint’s marginal failure rate; these rates overlap and are not additive. */
+export function checkpointRisks(
+  analysis: Analysis,
+  leave: number,
+): { id: string; miss: number }[] {
+  if (!analysis.prepared || !analysis.durations.length) return [];
+  const steps = analysis.prepared.steps.filter((s) => s.finishBy !== null);
+  if (!steps.length) return [];
+  const counts = new Map(steps.map((s) => [s.id, 0]));
+  for (const durations of analysis.durations) {
+    const trip = forward(analysis.prepared, leave, durations);
+    for (const id of trip.missedCutoffs)
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return steps.map((s) => ({
+    id: s.id,
+    miss: counts.get(s.id)! / analysis.durations.length,
+  }));
 }

@@ -53,9 +53,9 @@ export default function Result({
           <div className="coverage-line">
             <strong>{Math.round(analysis.coverage * 100)}%</strong>
             <span>
-              of modeled trips arrive with
+              of modeled trips meet every cutoff
               <br />
-              your {scenario.finalBuffer} min arrival buffer
+              and your {scenario.finalBuffer} min arrival buffer
             </span>
           </div>
         )}
@@ -246,10 +246,13 @@ export default function Result({
         <h2>A model, with assumptions</h2>
         <p>{scenario.assumption}</p>
         <p>
-          Durations are independent triangular distributions. Buffers are fixed.
-          Services follow only the schedule you entered. Closures, correlated
-          delays, cancellations, and airline cutoffs need separate steps or
-          buffers.
+          Durations use triangular distributions.{" "}
+          {scenario.linkedDelays
+            ? `${Math.round(scenario.linkedDelays * 100)}% of runs share a duration percentile across all steps; other runs are independent.`
+            : "All steps are independent."}{" "}
+          Buffers are fixed. Services follow only the schedule you entered.
+          Enter any check-in or appointment closing time as a step finish-by
+          cutoff. Cancellations and closures are outside this model.
         </p>
         <p>
           <strong>

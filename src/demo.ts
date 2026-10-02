@@ -17,6 +17,7 @@ const step = (
   buffer,
   boardingBuffer: 2,
   departures: "",
+  finishByLocal: "",
 });
 
 export function airportDemo(): Scenario {
@@ -45,6 +46,7 @@ export function airportDemo(): Scenario {
     disambiguation: "reject",
     earliestLocal: "2026-10-03T05:00",
     confidence: 0.9,
+    linkedDelays: 0,
     finalBuffer: 10,
     activePlanId: "rail-plan",
     assumption:
@@ -81,6 +83,7 @@ export function appointmentDemo(): Scenario {
     disambiguation: "reject",
     earliestLocal: "",
     confidence: 0.9,
+    linkedDelays: 0,
     finalBuffer: 5,
     activePlanId: "appointment-walk",
     assumption:

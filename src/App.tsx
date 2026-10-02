@@ -359,6 +359,35 @@ export default function App() {
                 </select>
               </Field>
             </div>
+            <div className="confidence-control linked-control">
+              <label htmlFor="linked-delays">
+                Linked-delay stress test{" "}
+                <strong>
+                  {Math.round((scenario.linkedDelays ?? 0) * 100)}%
+                </strong>
+              </label>
+              <input
+                id="linked-delays"
+                type="range"
+                min={0}
+                max={100}
+                step={10}
+                value={Math.round((scenario.linkedDelays ?? 0) * 100)}
+                onChange={(e) =>
+                  update({ linkedDelays: Number(e.target.value) / 100 })
+                }
+              />
+              <div className="range-endpoints">
+                <span>0% · independent</span>
+                <span>100% · move together</span>
+              </div>
+              <p className="field-note">
+                In this fraction of runs, all steps share the same duration
+                percentile. Other runs stay independent. Each step keeps its
+                original range and triangular distribution. This stress test is
+                an assumption, not a measured correlation.
+              </p>
+            </div>
             <Field
               label="Your assumptions"
               hint="Tell future you what the model includes, and what it leaves out."
@@ -419,7 +448,10 @@ export default function App() {
               <div className="section-heading">
                 <div>
                   <h2 id="journey-title">Everything between here & there</h2>
-                  <p>Tap a step to edit durations, buffers, or departures.</p>
+                  <p>
+                    Tap a step to edit durations, buffers, departures, or
+                    finish-by cutoffs.
+                  </p>
                 </div>
               </div>
               <div className="plan-name-row">
@@ -513,21 +545,22 @@ export default function App() {
               <details>
                 <summary>See the method & limits</summary>
                 <p>
-                  The same seeded 4,096 independent triangular draws are used on
-                  every calculation. The recommendation is a lower-tail quantile
-                  of the latest feasible departure: at least your chosen
-                  percentage of sample runs still work when leaving at that
-                  minute. A forward simulation verifies the timeline. Earlier
-                  trains are allowed; only entered departures exist. Sensitivity
-                  freezes one duration at its mode with the other samples
-                  unchanged.
+                  The same seeded 4,096 triangular draws are used on every
+                  calculation. The recommendation is a lower-tail quantile of
+                  the latest feasible departure: at least your chosen percentage
+                  of sample runs still work when leaving at that minute. A
+                  forward simulation verifies the timeline. Earlier trains are
+                  allowed; only entered departures exist. Sensitivity freezes
+                  one duration at its mode with the other samples unchanged.
                 </p>
                 <p>
-                  Finite samples have error, inputs are assumptions, and this
-                  tool does not model correlated disruptions or provide live
-                  transit, flight, traffic, security, or booking information.
-                  Add check-in cutoff steps explicitly. All steps share one time
-                  zone; elapsed travel remains correct across midnight and DST.
+                  Finite samples have error and inputs are assumptions. Linked
+                  durations are a stress test, not a calibrated disruption
+                  forecast. Enter any actual check-in close time as a step
+                  finish-by cutoff. All steps share one time zone; elapsed
+                  travel remains correct across midnight and DST. No live
+                  transit, flight, traffic, security, or booking information is
+                  supplied.
                 </p>
                 <p>
                   <a

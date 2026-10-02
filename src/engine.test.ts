@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { airportDemo, appointmentDemo } from "./demo";
 import {
   analyze,
+  checkpointRisks,
+  SEED,
   backward,
   connectionRisks,
   coverageAt,
@@ -278,7 +280,7 @@ describe("portable files and defensive validation", () => {
   it("rejects malformed JSON and unsupported versions", () => {
     expect(() => parseScenarioFile("{bad")).toThrow(/valid JSON/);
     expect(() =>
-      parseScenarioFile('{"format":"leavewell","version":2}'),
+      parseScenarioFile('{"format":"leavewell","version":3}'),
     ).toThrow(/Unsupported/);
   });
   it("rejects inverted durations, NaN and negative buffers", () => {
@@ -314,5 +316,205 @@ describe("portable files and defensive validation", () => {
     const t = fixed();
     t.plans[0].steps.push({ ...t.plans[0].steps[0] });
     expect(() => validateScenario(t)).toThrow();
+  });
+});
+
+describe("intermediate completion cutoffs", () => {
+  it("enforces a checkpoint before the post-step buffer, with inclusive equality", () => {
+    const s = fixed(10);
+    s.plans[0].steps[0].buffer = 20;
+    s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00";
+    s.plans[0].steps.push({
+      ...s.plans[0].steps[0],
+      id: "after",
+      buffer: 0,
+      finishByLocal: "",
+    });
+    const p = prepare(s, s.plans[0]);
+    const latest = backward(p, [10, 10]);
+    expect(latest).toBe(epoch("2026-10-03T06:50"));
+    const trip = forward(p, latest, [10, 10]);
+    expect(trip.rows[0].completed).toBe(epoch("2026-10-03T07:00"));
+    expect(trip.rows[0].end).toBe(epoch("2026-10-03T07:20"));
+    expect(trip.missedCutoffs).toEqual([]);
+    const late = forward(p, latest + 1, [10, 10]);
+    expect(late.arrival).toBeLessThan(p.deadline);
+    expect(late.missedCutoffs).toEqual([s.plans[0].steps[0].id]);
+  });
+  it("ignores a nonbinding later checkpoint and tightens transit arrival cutoffs", () => {
+    const s = transitScenario();
+    const original = analyze(s, s.plans[0]).recommendation;
+    s.plans[0].steps[1].finishByLocal = "2026-10-03T11:00";
+    expect(analyze(s, s.plans[0]).recommendation).toBe(original);
+    s.plans[0].steps[1].finishByLocal = "2026-10-03T09:45";
+    expect(analyze(s, s.plans[0]).recommendation).toBe(
+      epoch("2026-10-03T09:03"),
+    );
+    s.plans[0].steps[1].finishByLocal = "2026-10-03T09:00";
+    expect(analyze(s, s.plans[0]).status).toBe("impossible");
+  });
+  it("checks every checkpoint when inverting stochastic two-connection trips", () => {
+    const s = transitScenario();
+    s.arrivalLocal = "2026-10-03T11:00";
+    s.plans[0].steps[0].finishByLocal = "2026-10-03T09:20";
+    s.plans[0].steps[1].finishByLocal = "2026-10-03T09:55";
+    s.plans[0].steps.push({
+      ...s.plans[0].steps[1],
+      id: "bus2",
+      departures: "2026-10-03T10:00\n2026-10-03T10:15",
+      finishByLocal: "2026-10-03T10:40",
+    });
+    const p = prepare(s, s.plans[0]);
+    const rng = random(91);
+    for (let i = 0; i < 200; i++) {
+      const ds = [5 + rng() * 15, 10 + rng() * 20, 15 + rng() * 15];
+      const latest = backward(p, ds);
+      if (!Number.isFinite(latest)) continue;
+      const trip = forward(p, latest, ds);
+      expect(trip.arrival).toBeLessThanOrEqual(p.deadline + 0.01);
+      expect(trip.missedCutoffs).toEqual([]);
+      const late = forward(p, latest + 1, ds);
+      expect(late.arrival > p.deadline || late.missedCutoffs.length > 0).toBe(
+        true,
+      );
+    }
+  });
+  it("counts checkpoint failure separately and includes it in total coverage", () => {
+    const s = fixed(10);
+    s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00";
+    const a = analyze(s, s.plans[0]);
+    expect(checkpointRisks(a, a.recommendation!)[0].miss).toBe(0);
+    expect(checkpointRisks(a, a.recommendation! + MINUTE)[0].miss).toBe(1);
+    expect(coverageAt(a.samples, a.recommendation! + MINUTE)).toBe(0);
+  });
+  it("resolves overnight and DST checkpoint dates rather than comparing clock strings", () => {
+    const s = fixed(60);
+    s.arrivalLocal = "2026-10-03T03:00";
+    s.plans[0].steps[0].finishByLocal = "2026-10-03T00:30";
+    expect(analyze(s, s.plans[0]).recommendation).toBe(
+      epoch("2026-10-02T23:30"),
+    );
+    s.plans[0].steps[0].finishByLocal = "2026-03-08T02:30";
+    expect(analyze(s, s.plans[0]).error).toMatch(/finish-by.*does not exist/);
+    s.arrivalLocal = "2026-11-01T04:00";
+    s.plans[0].steps[0].finishByLocal = "2026-11-01T01:30";
+    expect(analyze(s, s.plans[0]).error).toMatch(/occurs twice/);
+    s.plans[0].steps[0].finishByLocal = "2026-11-01T01:30-08:00";
+    expect(analyze(s, s.plans[0]).recommendation).toBe(
+      epoch("2026-11-01T01:30-07:00"),
+    );
+  });
+});
+
+describe("linked-delay stress model", () => {
+  function twoSteps() {
+    const s = fixed(20);
+    s.plans[0].steps[0].min = 5;
+    s.plans[0].steps[0].max = 40;
+    s.plans[0].steps.push({ ...s.plans[0].steps[0], id: "second" });
+    return s;
+  }
+  it("keeps the original independent draw stream byte-for-byte at zero linkage", () => {
+    const s = twoSteps();
+    const rng = random(SEED);
+    const original = Array.from({ length: 4096 }, () =>
+      s.plans[0].steps.map((step) =>
+        triangular(step.min, step.mode, step.max, rng()),
+      ),
+    );
+    delete s.linkedDelays;
+    expect(analyze(s, s.plans[0]).durations).toEqual(original);
+    s.linkedDelays = 0;
+    expect(analyze(s, s.plans[0]).durations).toEqual(original);
+  });
+  it("makes identical distributions move exactly together at full linkage", () => {
+    const s = twoSteps();
+    s.linkedDelays = 1;
+    const a = analyze(s, s.plans[0]);
+    expect(a.durations.every(([first, second]) => first === second)).toBe(true);
+    expect(analyze(s, s.plans[0]).samples).toEqual(a.samples);
+    expect(a.coverage).toBeGreaterThanOrEqual(s.confidence);
+  });
+  it("mixes independent and shared-percentile runs without changing marginal bounds", () => {
+    const s = twoSteps();
+    s.linkedDelays = 0.5;
+    const a = analyze(s, s.plans[0]);
+    const linkedFraction =
+      a.durations.filter(([x, y]) => x === y).length / a.durations.length;
+    expect(linkedFraction).toBeGreaterThan(0.46);
+    expect(linkedFraction).toBeLessThan(0.54);
+    for (let j = 0; j < 2; j++) {
+      const values = a.durations.map((ds) => ds[j]);
+      expect(Math.min(...values)).toBeGreaterThanOrEqual(5);
+      expect(Math.max(...values)).toBeLessThanOrEqual(40);
+      const mean = values.reduce((n, v) => n + v, 0) / values.length;
+      expect(Math.abs(mean - (5 + 20 + 40) / 3)).toBeLessThan(0.4);
+    }
+  });
+  it("moves the high-coverage departure earlier for linked identical simple steps", () => {
+    const s = twoSteps();
+    const independent = analyze(s, s.plans[0]).recommendation!;
+    s.linkedDelays = 1;
+    expect(analyze(s, s.plans[0]).recommendation!).toBeLessThan(independent);
+  });
+  it("enforces checkpoints and target coverage under partial linkage", () => {
+    const s = twoSteps();
+    s.linkedDelays = 0.7;
+    s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00";
+    const a = analyze(s, s.plans[0]);
+    const successes =
+      a.durations.filter((ds) => {
+        const t = forward(a.prepared!, a.recommendation!, ds);
+        return (
+          t.arrival <= a.prepared!.deadline + 0.01 &&
+          t.missedCutoffs.length === 0
+        );
+      }).length / a.durations.length;
+    expect(successes).toBeGreaterThanOrEqual(s.confidence);
+    expect(successes).toBe(a.coverage);
+  });
+});
+
+describe("version 2 migration", () => {
+  it("loads a legacy v1 file with independent defaults and no checkpoints", () => {
+    const s = airportDemo();
+    delete s.linkedDelays;
+    s.plans.forEach((p) =>
+      p.steps.forEach((step) => delete step.finishByLocal),
+    );
+    const original = analyze(s, s.plans[0]).samples;
+    const loaded = parseScenarioFile(
+      JSON.stringify({ format: "leavewell", version: 1, scenario: s }),
+    );
+    expect(loaded.linkedDelays).toBe(0);
+    expect(
+      loaded.plans.every((p) =>
+        p.steps.every((step) => step.finishByLocal === ""),
+      ),
+    ).toBe(true);
+    expect(analyze(loaded, loaded.plans[0]).samples).toEqual(original);
+    expect(s.linkedDelays).toBeUndefined();
+  });
+  it("roundtrips linked assumptions and exact-offset checkpoints with version 2", () => {
+    const s = fixed();
+    s.linkedDelays = 0.6;
+    s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00-07:00";
+    const raw = exportScenario(s);
+    expect(JSON.parse(raw).version).toBe(2);
+    expect(parseScenarioFile(raw)).toEqual(s);
+  });
+  it("rejects invalid linkage, malformed checkpoint fields and nonexistent imported dates", () => {
+    const s = fixed();
+    for (const invalid of [-1, 1.1, NaN]) {
+      s.linkedDelays = invalid;
+      expect(() => validateScenario(s)).toThrow();
+    }
+    s.linkedDelays = 0;
+    s.plans[0].steps[0].finishByLocal = "x".repeat(41);
+    expect(() => validateScenario(s)).toThrow();
+    s.plans[0].steps[0].finishByLocal = "2026-03-08T02:30";
+    expect(() => parseScenarioFile(exportScenario(s))).toThrow(
+      /does not exist/,
+    );
   });
 });

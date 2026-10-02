@@ -1,6 +1,6 @@
 import { ArrowRight, Flag, TrainFront } from "lucide-react";
 import type { Analysis } from "../engine";
-import { connectionRisks, forward } from "../engine";
+import { checkpointRisks, connectionRisks, forward } from "../engine";
 import { localDate, timeLabel } from "../time";
 import type { Scenario } from "../model";
 import { icons } from "./StepEditor";
@@ -21,6 +21,7 @@ export default function Timeline({
     p.steps.map((s) => s.mode),
   );
   const risks = connectionRisks(analysis, leave, trip.rows);
+  const checkpoints = checkpointRisks(analysis, leave);
   return (
     <section className="timeline-section" aria-labelledby="timeline-title">
       <div className="section-heading">
@@ -83,6 +84,30 @@ export default function Timeline({
                     </div>
                   </div>
                 )}
+                {row.finishBy !== null && (
+                  <div
+                    className={`checkpoint-note ${trip.missedCutoffs.includes(row.step.id) ? "missed" : ""}`}
+                  >
+                    <Flag size={15} />
+                    <div>
+                      <strong>
+                        Finish by {timeLabel(row.finishBy, scenario.timeZone)} ·{" "}
+                        {localDate(row.finishBy, scenario.timeZone)}
+                      </strong>
+                      <span>
+                        {trip.missedCutoffs.includes(row.step.id)
+                          ? "Typical trip misses this cutoff"
+                          : `Typical completion: ${timeLabel(row.completed, scenario.timeZone)}`}{" "}
+                        ·{" "}
+                        {Math.round(
+                          (checkpoints.find((c) => c.id === row.step.id)
+                            ?.miss ?? 0) * 100,
+                        )}
+                        % of model runs miss this cutoff
+                      </span>
+                    </div>
+                  </div>
+                )}
                 {row.departure === Infinity && (
                   <div className="inline-error">
                     No listed departure remains after you reach this connection.
@@ -94,7 +119,7 @@ export default function Timeline({
         })}
       </ol>
       <div
-        className={`arrival-line ${trip.arrival > p.deadline ? "late" : ""}`}
+        className={`arrival-line ${trip.arrival > p.deadline || trip.missedCutoffs.length > 0 ? "late" : ""}`}
       >
         <Flag size={18} />
         <div>
@@ -104,11 +129,13 @@ export default function Timeline({
               : "This connection is missed"}
           </strong>
           <span>
-            {Number.isFinite(trip.arrival)
-              ? trip.arrival <= p.arrival
-                ? `${Math.floor((p.arrival - trip.arrival) / 60000)} min before the hard deadline · ${scenario.finalBuffer} min reserved arrival buffer`
-                : `${Math.ceil((trip.arrival - p.arrival) / 60000)} min after the hard deadline`
-              : "Try leaving earlier or adding a later departure."}
+            {trip.missedCutoffs.length > 0
+              ? "A step finish-by cutoff is missed, even if the final arrival fits. Try leaving earlier."
+              : Number.isFinite(trip.arrival)
+                ? trip.arrival <= p.arrival
+                  ? `${Math.floor((p.arrival - trip.arrival) / 60000)} min before the hard deadline · ${scenario.finalBuffer} min reserved arrival buffer`
+                  : `${Math.ceil((trip.arrival - p.arrival) / 60000)} min after the hard deadline`
+                : "Try leaving earlier or adding a later departure."}
           </span>
         </div>
       </div>
