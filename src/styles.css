@@ -11,7 +11,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   --green: #1c4b45;
-  --muted: #697771;
+  --muted: #5f6e66;
   --border: #dce3dc;
   --orange: #be6034;
   --sage: #e9f0e6;
@@ -298,7 +298,7 @@ svg {
   font-family: Georgia, serif;
   font-size: 14px;
   font-style: italic;
-  color: #6c806f;
+  color: #5c705f;
   transform: rotate(-3deg);
 }
 .workspace-heading {
@@ -504,7 +504,7 @@ details summary:hover {
 }
 .plan-option small {
   font-size: 10px;
-  color: #657469;
+  color: #5f6e62;
 }
 .plan-time {
   display: flex;
@@ -778,7 +778,7 @@ details summary:hover {
   font-size: 10px;
   margin-top: 5px;
   line-height: 1.6;
-  color: #657469;
+  color: #5f6e62;
 }
 .connection-note svg {
   margin-top: 2px;
@@ -803,7 +803,7 @@ details summary:hover {
 .arrival-line span {
   font-size: 10px;
   line-height: 1.5;
-  color: #5d765f;
+  color: #526c54;
   margin-top: 5px;
 }
 .arrival-line.late {
@@ -811,7 +811,7 @@ details summary:hover {
   border-color: #e9cebb;
 }
 .arrival-line.late span {
-  color: #986b4c;
+  color: #875f44;
 }
 .method-note {
   border-top: 1px solid var(--border);
@@ -1073,7 +1073,7 @@ details summary:hover {
   font-size: 13px;
 }
 .assumptions p {
-  color: #667368;
+  color: #5f6b60;
   font-size: 10px;
   margin-top: 12px;
   line-height: 1.7;
