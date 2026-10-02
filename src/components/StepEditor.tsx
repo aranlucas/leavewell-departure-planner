@@ -57,6 +57,7 @@ export default function StepEditor({
           <span>
             {kindNames[step.kind]}
             {step.buffer > 0 ? ` · +${step.buffer} min buffer` : ""}
+            {step.finishByLocal ? " · finish-by cutoff" : ""}
           </span>
         </span>
         <span className="step-range">
@@ -130,6 +131,19 @@ export default function StepEditor({
               />
             )}
           </div>
+          <Field
+            label="Finish this step by"
+            hint="Optional dated cutoff in the scenario time zone. Completion must meet this time; the post-step buffer comes afterward. Leave blank for no cutoff."
+          >
+            <input
+              type="text"
+              inputMode="text"
+              maxLength={40}
+              placeholder="2026-10-03T07:15"
+              value={step.finishByLocal ?? ""}
+              onChange={(e) => update({ finishByLocal: e.target.value })}
+            />
+          </Field>
           {step.kind === "transit" && (
             <Field
               label="Scheduled departures"

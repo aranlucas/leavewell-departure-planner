@@ -1,4 +1,4 @@
-import { useId } from "react";
+import { Children, cloneElement, isValidElement, useId } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 export function Field({
   label,
@@ -9,12 +9,38 @@ export function Field({
   hint?: string;
   children: ReactNode;
 }) {
+  const generatedId = useId();
+  type ControlProps = { id?: string; "aria-describedby"?: string };
+  const isControl = (child: ReactNode) =>
+    isValidElement<ControlProps>(child) &&
+    ["input", "textarea", "select"].includes(String(child.type));
+  const control = Children.toArray(children).find(isControl);
+  const controlId =
+    (isValidElement<ControlProps>(control) ? control.props.id : undefined) ??
+    generatedId;
+  const hintId = `${generatedId}-hint`;
+  const description =
+    [
+      isValidElement<ControlProps>(control)
+        ? control.props["aria-describedby"]
+        : undefined,
+      hint ? hintId : null,
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined;
   return (
-    <label className="field">
-      <span>{label}</span>
-      {children}
-      {hint && <small>{hint}</small>}
-    </label>
+    <div className="field">
+      <label htmlFor={controlId}>{label}</label>
+      {Children.map(children, (child) =>
+        isControl(child) && isValidElement<ControlProps>(child)
+          ? cloneElement(child, {
+              id: controlId,
+              "aria-describedby": description,
+            })
+          : child,
+      )}
+      {hint && <small id={hintId}>{hint}</small>}
+    </div>
   );
 }
 export function NumberField({

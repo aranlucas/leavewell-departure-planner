@@ -343,7 +343,8 @@ svg {
   gap: 7px;
   min-width: 0;
 }
-.field > span {
+.field > span,
+.field > label {
   font-size: 11px;
   font-weight: 600;
   color: #53685f;
@@ -538,7 +539,8 @@ details summary:hover {
   font-size: 15px;
   min-height: 32px;
 }
-.plan-name-row .field > span {
+.plan-name-row .field > span,
+.plan-name-row .field > label {
   font-size: 10px;
   font-weight: 400;
 }
@@ -1702,7 +1704,8 @@ details summary:hover {
   .library-row {
     padding: 18px 0;
   }
-  .arrival-settings .field > span {
+  .arrival-settings .field > span,
+  .arrival-settings .field > label {
     font-size: 11px;
   }
   input,
@@ -1719,7 +1722,8 @@ details summary:hover {
   .step-range small {
     font-size: 10px;
   }
-  .field > span {
+  .field > span,
+  .field > label {
     font-size: 11px;
   }
 }
@@ -1729,4 +1733,34 @@ details summary:hover {
     transition: none !important;
     animation: none !important;
   }
+}
+
+.checkpoint-note {
+  display: flex;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #edf2eb;
+  border-radius: 9px;
+  color: #33483c;
+  font-size: 12px;
+}
+.checkpoint-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.checkpoint-note strong,
+.checkpoint-note span {
+  display: block;
+}
+.checkpoint-note span {
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.checkpoint-note.missed {
+  background: #fff0de;
+  color: #7b4413;
+}
+.linked-control {
+  margin: 8px 0 18px;
 }

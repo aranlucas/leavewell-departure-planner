@@ -12,8 +12,8 @@
 | Check                                                           | Outcome                            |
 | --------------------------------------------------------------- | ---------------------------------- |
 | TypeScript + production bundle                                  | Pass                               |
-| Scheduling/validation unit tests                                | 34 / 34 pass                       |
-| Desktop and mobile end-to-end tests                             | 26 / 26 pass                       |
+| Scheduling/validation unit tests                                | 47 / 47 pass                       |
+| Desktop and mobile end-to-end tests                             | 34 / 34 pass                       |
 | Correct page identity and meaningful content                    | Pass                               |
 | No framework error overlay                                      | Pass                               |
 | App console and uncaught runtime errors                         | None in tested flows               |
@@ -31,9 +31,13 @@
 | Dialog Escape and focus restoration                             | Pass; initial focus defect fixed   |
 | Missed final connection remains readable                        | Pass                               |
 
+The overnight refinement added 13 unit cases and 4 browser flows per viewport. Checkpoint tests verify completion before post-step buffers, inclusive equality, impossible transit arrivals, multiple constraints, risk denominators, and DST/overnight cutoffs. Linked-delay tests verify an unchanged independent seed stream, exact full linkage, marginal bounds/means, repeatability, and coverage with checkpoints. Browser tests cover missed-cutoff warnings, linkage controls, version 1 file and device-storage migration, export/reload, and new features while network is disabled.
+
+A first browser run exposed hint text being included in field names. Fields now keep concise explicit labels and attach hints through `aria-describedby`; the complete rerun passed. A TypeScript check also caught the time-zone datalist sibling during that fix, and support for it was preserved.
+
 Unit tests additionally cover cross-zone equivalent instants, elapsed spring/fall DST traversal, overnight transit, explicit offset ambiguity, triangular endpoints, repeatable sampling, non-divisible percentile ranks, impossible sample denominators, inclusive boarding thresholds, schedule sorting/deduplication, forward/backward feasibility equivalence, and import limits.
 
-The final artifact directory contains full-page desktop/mobile images, viewport captures, impossible-state captures, and the exported demo file. Source tests are committed; generated evidence is bundled separately. Playwright's Node color-environment warning is a runner warning, not an app console error.
+Original v1 evidence is preserved. New captures use `leavewell-v2-*` names, with checkpoint/linkage captures and version 2 exports alongside them. The final artifact directory contains full-page desktop/mobile images, viewport captures, impossible-state captures, and the exported demo file. Source tests are committed; generated evidence is bundled separately. Playwright's Node color-environment warning is a runner warning, not an app console error.
 
 ## Limits
 

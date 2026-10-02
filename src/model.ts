@@ -10,6 +10,8 @@ export interface Step {
   buffer: number;
   boardingBuffer: number;
   departures: string;
+  /** Optional completion cutoff, before this step’s post-step buffer. */
+  finishByLocal?: string;
 }
 export interface Plan {
   id: string;
@@ -24,6 +26,8 @@ export interface Scenario {
   disambiguation: Disambiguation;
   earliestLocal: string;
   confidence: number;
+  /** Fraction of draws sharing a duration percentile; 0 preserves independent runs. */
+  linkedDelays?: number;
   finalBuffer: number;
   activePlanId: string;
   plans: Plan[];
@@ -31,7 +35,7 @@ export interface Scenario {
 }
 export interface ScenarioFile {
   format: "leavewell";
-  version: 1;
+  version: 1 | 2;
   scenario: Scenario;
 }
 export const uid = () => crypto.randomUUID();
@@ -46,5 +50,6 @@ export function newStep(kind: StepKind = "task"): Step {
     buffer: 0,
     boardingBuffer: 2,
     departures: "",
+    finishByLocal: "",
   };
 }
