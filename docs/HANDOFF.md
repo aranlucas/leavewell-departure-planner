@@ -4,7 +4,7 @@ Leavewell is complete as a local, usable prototype. Run `npm ci && npm run build
 
 ## Publication
 
-The new repository [aranlucas/leavewell-departure-planner](https://github.com/aranlucas/leavewell-departure-planner) is verified private through the GitHub connector. Its `main` branch contains an honest bootstrap README; the complete implementation is on `feature/leavewell` for a meaningful draft PR. The core draft PR is [#1](https://github.com/aranlucas/leavewell-departure-planner/pull/1). Overnight refinements live on `feature/checkpoints-and-linked-delays`, based on that implementation branch, so their follow-up PR shows only the new feature diff. The final receipt reports both PRs and exact remote commits.
+The repository [aranlucas/leavewell-departure-planner](https://github.com/aranlucas/leavewell-departure-planner) is verified private. The core implementation was merged through [PR #1](https://github.com/aranlucas/leavewell-departure-planner/pull/1). [PR #2](https://github.com/aranlucas/leavewell-departure-planner/pull/2) contains the checkpoint/linkage refinements on `feature/checkpoints-and-linked-delays`, refreshed against the merged main branch without rewriting published history. Final merge outcomes and exact commit IDs are recorded in the artifact receipt.
 
 The built-in browser was unavailable, and the Chrome creation form was not authenticated. After the Mac reconnected, the existing host GitHub CLI session succeeded under normal permission review. No credentials were inspected, copied, configured, or transferred. No existing checkout or published history was rewritten.
 
@@ -25,6 +25,6 @@ The refinements deliver explicit intermediate cutoffs, a user-controlled linked-
 
 Future work with the greatest practical value: explicit transit/route imports, local observed-duration distributions, and connection-specific time zones.
 
-## Merge approval
+## Merge authorization
 
-No merge occurred. Automatic approval review rejected merging because this task's original delegation prohibited existing-PR merges and it did not accept the later permission retrieved from the parent thread as trusted authorization. Direct approval was requested in this task; the PRs remain open unless that approval arrives. No paid GitHub upgrade, protection bypass, hosted run, or deployment was attempted.
+The user later explicitly authorized merging verified project PRs. Earlier automatic-review denials changed no remote state; retrying after verbatim permission was supplied directly in the task was accepted. No paid GitHub upgrade, protection bypass, hosted run, or deployment was attempted.
