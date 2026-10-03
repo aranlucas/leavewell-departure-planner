@@ -4,6 +4,7 @@ import { checkpointRisks, connectionRisks, forward } from "../engine";
 import { localDate, timeLabel } from "../time";
 import type { Scenario } from "../model";
 import { icons } from "./StepEditor";
+
 export default function Timeline({
   analysis,
   scenario,
@@ -15,13 +16,16 @@ export default function Timeline({
 }) {
   if (!analysis.prepared || leave === null) return null;
   const p = analysis.prepared;
+
   const trip = forward(
     p,
     leave,
     p.steps.map((s) => s.mode),
   );
+
   const risks = connectionRisks(analysis, leave, trip.rows);
   const checkpoints = checkpointRisks(analysis, leave);
+
   return (
     <section className="timeline-section" aria-labelledby="timeline-title">
       <div className="section-heading">
@@ -42,6 +46,7 @@ export default function Timeline({
         {trip.rows.map((row) => {
           const Icon = icons[row.step.kind];
           const risk = risks.find((r) => r.id === row.step.id);
+
           return (
             <li key={row.step.id}>
               <span className={`timeline-marker ${row.step.kind}`}>

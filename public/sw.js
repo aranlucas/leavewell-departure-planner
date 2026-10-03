@@ -1,15 +1,19 @@
 /* Versioned offline shell. No scenario inputs leave the browser. */
 const CACHE = "leavewell-shell-v1";
+
 self.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
       const response = await fetch("/", { cache: "reload" });
+
       if (!response.ok) throw new Error("Shell unavailable");
       const html = await response.clone().text();
+
       const assets = [
         ...html.matchAll(/(?:src|href)="(\/assets\/[^"\s]+)"/g),
       ].map((match) => match[1]);
+
       await cache.put("/", response);
       await cache.addAll([
         ...new Set([...assets, "/icon.svg", "/manifest.webmanifest"]),
@@ -18,6 +22,7 @@ self.addEventListener("install", (event) => {
     })(),
   );
 });
+
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
@@ -28,19 +33,24 @@ self.addEventListener("activate", (event) => {
     })(),
   );
 });
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
+
   if (event.request.method !== "GET" || url.origin !== self.location.origin)
     return;
+
   if (event.request.mode === "navigate") {
     event.respondWith(
       (async () => {
         try {
           const response = await fetch(event.request);
+
           if (response.ok) return response;
         } catch {
           /* Fall back to the last complete shell. */
         }
+
         return (
           (await caches.match("/")) ||
           new Response(

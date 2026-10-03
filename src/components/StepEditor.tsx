@@ -1,3 +1,4 @@
+import { isStepKind } from "../model";
 import {
   ArrowDown,
   ArrowUp,
@@ -9,20 +10,23 @@ import {
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
-import type { Step, StepKind } from "../model";
+import type { Step } from "../model";
 import { Field, NumberField } from "./Field";
+
 export const icons = {
   walk: Footprints,
   drive: Car,
   transit: TrainFront,
   task: ListChecks,
 };
+
 export const kindNames = {
   walk: "Walking",
   drive: "Driving",
   transit: "Scheduled transit",
   task: "Check-in / task",
 };
+
 export default function StepEditor({
   step,
   index,
@@ -41,6 +45,7 @@ export default function StepEditor({
   const [open, setOpen] = useState(false);
   const Icon = icons[step.kind];
   const update = (patch: Partial<Step>) => onChange({ ...step, ...patch });
+
   return (
     <div className={`step-editor ${open ? "expanded" : ""}`}>
       <button
@@ -84,7 +89,11 @@ export default function StepEditor({
             <Field label="Step type">
               <select
                 value={step.kind}
-                onChange={(e) => update({ kind: e.target.value as StepKind })}
+                onChange={(e) => {
+                  const value = e.target.value;
+
+                  if (isStepKind(value)) update({ kind: value });
+                }}
               >
                 {Object.entries(kindNames).map(([k, v]) => (
                   <option key={k} value={k}>

@@ -1,3 +1,4 @@
+import { errorMessage, isDisambiguation } from "./model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -16,7 +17,7 @@ import {
 import { airportDemo, appointmentDemo } from "./demo";
 import { analyze } from "./engine";
 import { newStep, uid } from "./model";
-import type { Disambiguation, Plan, Scenario, StepKind } from "./model";
+import type { Plan, Scenario } from "./model";
 import { persistWorkspace, readWorkspace } from "./storage";
 import { exportScenario, parseScenarioFile } from "./validation";
 import { MINUTE, timeLabel } from "./time";
@@ -40,12 +41,15 @@ export default function App() {
   const [offline, setOffline] = useState(!navigator.onLine);
   const [offlineReady, setOfflineReady] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
   const analyses = useMemo(
     () => scenario.plans.map((p) => analyze(scenario, p)),
     [scenario],
   );
+
   const active = scenario.plans.find((p) => p.id === scenario.activePlanId)!;
   const analysis = analyses.find((p) => p.planId === active.id)!;
+
   const leave =
     analysis.recommendation === null
       ? null
@@ -53,6 +57,7 @@ export default function App() {
 
   useEffect(() => {
     if (pauseSaving) return;
+
     try {
       setPersisted(persistWorkspace(scenario, saved));
       setStorageWarning("");
@@ -65,15 +70,19 @@ export default function App() {
   }, [scenario, saved, pauseSaving]);
   useEffect(() => {
     const change = () => setOffline(!navigator.onLine);
+
     const cacheFailure = () =>
       setNotice(
         "Offline caching failed. Keep this tab open, or reload online to retry.",
       );
+
     window.addEventListener("online", change);
     window.addEventListener("offline", change);
     window.addEventListener("offline-cache-error", cacheFailure);
+
     if (import.meta.env.PROD && "serviceWorker" in navigator)
       navigator.serviceWorker.ready.then(() => setOfflineReady(true));
+
     return () => {
       window.removeEventListener("online", change);
       window.removeEventListener("offline", change);
@@ -83,36 +92,46 @@ export default function App() {
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(""), 8000);
+
     return () => clearTimeout(timer);
   }, [notice]);
+
   const update = (patch: Partial<Scenario>) => {
     setScenario((s) => ({ ...s, ...patch }));
     setOffset(0);
   };
+
   const updatePlan = (plan: Plan) =>
     update({ plans: scenario.plans.map((p) => (p.id === plan.id ? plan : p)) });
+
   const load = (s: Scenario) => {
     setScenario(structuredClone(s));
     setOffset(0);
     setLibrary(false);
     setNotice(`Opened “${s.name}”.`);
   };
+
   const save = () => {
     try {
       exportScenario(scenario);
+
       if (analyses.some((a) => a.error))
         throw new Error(
           "Resolve the highlighted model inputs before saving a named scenario.",
         );
+
       if (saved.length >= 20 && !saved.some((s) => s.id === scenario.id))
         throw new Error(
           "You have 20 saved scenarios. Export or remove one before saving another.",
         );
+
       const next = [
         ...saved.filter((s) => s.id !== scenario.id),
         structuredClone(scenario),
       ];
+
       setSaved(next);
+
       try {
         persistWorkspace(scenario, next);
         setPauseSaving(false);
@@ -124,19 +143,23 @@ export default function App() {
         );
       }
     } catch (error) {
-      setNotice((error as Error).message);
+      setNotice(errorMessage(error));
     }
   };
+
   const download = () => {
     try {
       const raw = exportScenario(scenario);
+
       if (analyses.some((a) => a.error))
         throw new Error(
           "Resolve the model input errors before exporting a portable scenario.",
         );
+
       const url = URL.createObjectURL(
         new Blob([raw], { type: "application/json" }),
       );
+
       const a = document.createElement("a");
       a.href = url;
       a.download = `leavewell-${
@@ -151,9 +174,10 @@ export default function App() {
         "Portable scenario exported. It includes your inputs, not personal location data.",
       );
     } catch (error) {
-      setNotice((error as Error).message);
+      setNotice(errorMessage(error));
     }
   };
+
   const duplicate = () => {
     const plan = {
       ...structuredClone(active),
@@ -161,8 +185,10 @@ export default function App() {
       name: `${active.name} copy`.slice(0, 100),
       steps: active.steps.map((s) => ({ ...s, id: uid() })),
     };
+
     update({ plans: [...scenario.plans, plan], activePlanId: plan.id });
   };
+
   const move = (index: number, direction: number) => {
     const steps = [...active.steps];
     [steps[index], steps[index + direction]] = [
@@ -171,6 +197,7 @@ export default function App() {
     ];
     updatePlan({ ...active, steps });
   };
+
   return (
     <>
       <a className="skip-link" href="#planner">
@@ -251,6 +278,7 @@ export default function App() {
               className="button"
               onClick={() => {
                 setPauseSaving(false);
+
                 try {
                   setPersisted(persistWorkspace(scenario, saved));
                   setStorageWarning("");
@@ -349,9 +377,12 @@ export default function App() {
               >
                 <select
                   value={scenario.disambiguation}
-                  onChange={(e) =>
-                    update({ disambiguation: e.target.value as Disambiguation })
-                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+
+                    if (isDisambiguation(value))
+                      update({ disambiguation: value });
+                  }}
                 >
                   <option value="reject">Require an explicit choice</option>
                   <option value="earlier">First occurrence (earlier)</option>
@@ -508,30 +539,28 @@ export default function App() {
               </div>
               <div className="add-step-row">
                 <span>Add a step</span>
-                {(["walk", "drive", "transit", "task"] as StepKind[]).map(
-                  (k) => (
-                    <button
-                      key={k}
-                      className="button small-button"
-                      disabled={active.steps.length >= 20}
-                      onClick={() =>
-                        updatePlan({
-                          ...active,
-                          steps: [...active.steps, newStep(k)],
-                        })
-                      }
-                    >
-                      <Plus size={13} />
-                      {k === "task"
-                        ? "Task"
-                        : k === "transit"
-                          ? "Transit"
-                          : k === "drive"
-                            ? "Drive"
-                            : "Walk"}
-                    </button>
-                  ),
-                )}
+                {(["walk", "drive", "transit", "task"] as const).map((k) => (
+                  <button
+                    key={k}
+                    className="button small-button"
+                    disabled={active.steps.length >= 20}
+                    onClick={() =>
+                      updatePlan({
+                        ...active,
+                        steps: [...active.steps, newStep(k)],
+                      })
+                    }
+                  >
+                    <Plus size={13} />
+                    {k === "task"
+                      ? "Task"
+                      : k === "transit"
+                        ? "Transit"
+                        : k === "drive"
+                          ? "Drive"
+                          : "Walk"}
+                  </button>
+                ))}
               </div>
             </section>
             <Timeline analysis={analysis} scenario={scenario} leave={leave} />
@@ -632,7 +661,9 @@ export default function App() {
         className="sr-only"
         onChange={async (e) => {
           const file = e.target.files?.[0];
+
           if (!file) return;
+
           try {
             if (file.size > 500000)
               throw new Error("Choose a scenario file under 500 KB.");
@@ -642,7 +673,7 @@ export default function App() {
               "Scenario imported. Save it to keep a named copy on this device.",
             );
           } catch (error) {
-            setNotice((error as Error).message);
+            setNotice(errorMessage(error));
           } finally {
             e.target.value = "";
           }

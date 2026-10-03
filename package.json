@@ -9,7 +9,9 @@
     "preview": "vite preview --host 127.0.0.1 --port 4310 --strictPort",
     "start": "node server.mjs",
     "test": "vitest run --maxWorkers=1 --minWorkers=1",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "oxlint .",
+    "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
@@ -26,6 +28,8 @@
     "prettier": "3.5.2",
     "typescript": "5.9.3",
     "vite": "6.4.3",
-    "vitest": "2.1.9"
+    "vitest": "2.1.9",
+    "oxlint": "1.86.0",
+    "@oxlint/plugins": "1.86.0"
   }
 }

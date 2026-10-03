@@ -4,6 +4,7 @@ import { coverageAt, histogram, SAMPLE_COUNT } from "../engine";
 import type { Analysis } from "../engine";
 import type { Scenario } from "../model";
 import { MINUTE, offsetLabel, timeLabel } from "../time";
+
 export default function Result({
   analysis,
   scenario,
@@ -19,14 +20,18 @@ export default function Result({
     analysis.recommendation === null
       ? null
       : analysis.recommendation + offset * MINUTE;
+
   const coverage = coverageAt(analysis.samples, leave);
   const chart = useMemo(() => histogram(analysis.samples), [analysis.samples]);
   const dominant = analysis.sensitivities[0];
+
   const maxSensitivity = Math.max(
     1,
     ...analysis.sensitivities.map((s) => s.minutes),
   );
+
   const valid = analysis.status === "ready";
+
   return (
     <aside className="result-column" aria-label="Departure recommendation">
       <section
@@ -145,6 +150,7 @@ export default function Result({
                   const boundary =
                     chart.min +
                     ((i + 0.5) / chart.counts.length) * (chart.max - chart.min);
+
                   return (
                     <div
                       key={i}

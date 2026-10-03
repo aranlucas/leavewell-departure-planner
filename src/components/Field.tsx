@@ -1,5 +1,6 @@
 import { Children, cloneElement, isValidElement, useId } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
+
 export function Field({
   label,
   hint,
@@ -10,15 +11,21 @@ export function Field({
   children: ReactNode;
 }) {
   const generatedId = useId();
+
   type ControlProps = { id?: string; "aria-describedby"?: string };
+
   const isControl = (child: ReactNode) =>
     isValidElement<ControlProps>(child) &&
     ["input", "textarea", "select"].includes(String(child.type));
+
   const control = Children.toArray(children).find(isControl);
+
   const controlId =
     (isValidElement<ControlProps>(control) ? control.props.id : undefined) ??
     generatedId;
+
   const hintId = `${generatedId}-hint`;
+
   const description =
     [
       isValidElement<ControlProps>(control)
@@ -28,6 +35,7 @@ export function Field({
     ]
       .filter(Boolean)
       .join(" ") || undefined;
+
   return (
     <div className="field">
       <label htmlFor={controlId}>{label}</label>
@@ -43,6 +51,7 @@ export function Field({
     </div>
   );
 }
+
 export function NumberField({
   label,
   value,
@@ -56,6 +65,7 @@ export function NumberField({
   max?: number;
 } & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
   const id = useId();
+
   return (
     <label className="field" htmlFor={id}>
       <span>{label}</span>
