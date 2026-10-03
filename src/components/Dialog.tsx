@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
+
 export default function Dialog({
   title,
   onClose,
@@ -12,14 +13,17 @@ export default function Dialog({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    const previous = document.activeElement as HTMLElement | null;
+    const previous = document.activeElement;
     const dialog = ref.current;
     dialog?.showModal();
+
     return () => {
       dialog?.close();
-      previous?.focus();
+
+      if (previous instanceof HTMLElement) previous.focus();
     };
   }, []);
+
   return (
     <dialog
       ref={ref}

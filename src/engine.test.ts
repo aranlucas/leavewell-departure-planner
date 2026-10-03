@@ -20,6 +20,7 @@ import {
   parseScenarioFile,
   validateScenario,
 } from "./validation";
+
 function fixed(minutes = 60): Scenario {
   const s = appointmentDemo();
   s.timeZone = "America/Los_Angeles";
@@ -37,8 +38,10 @@ function fixed(minutes = 60): Scenario {
     },
   ];
   s.activePlanId = s.plans[0].id;
+
   return s;
 }
+
 function transitScenario(): Scenario {
   const s = fixed(10);
   s.arrivalLocal = "2026-10-03T10:00";
@@ -53,8 +56,10 @@ function transitScenario(): Scenario {
     boardingBuffer: 2,
     departures: "2026-10-03T09:15\n2026-10-03T09:30\n2026-10-03T09:45",
   });
+
   return s;
 }
+
 const epoch = (v: string) => parseTime(v, "America/Los_Angeles");
 
 describe("time zones, DST and overnight trips", () => {
@@ -130,6 +135,7 @@ describe("distribution and percentile semantics", () => {
   it("seeded draws are stable and inside [0,1)", () => {
     const a = random(42),
       b = random(42);
+
     for (let i = 0; i < 1000; i++) {
       const v = a();
       expect(v).toBe(b());
@@ -251,6 +257,7 @@ describe("connections, buffers and constraints", () => {
     });
     const p = prepare(s, s.plans[0]);
     const rng = random(17);
+
     for (let i = 0; i < 200; i++) {
       const ds = [5 + rng() * 15, 10 + rng() * 20, 15 + rng() * 15];
       const latest = backward(p, ds);
@@ -366,9 +373,11 @@ describe("intermediate completion cutoffs", () => {
     });
     const p = prepare(s, s.plans[0]);
     const rng = random(91);
+
     for (let i = 0; i < 200; i++) {
       const ds = [5 + rng() * 15, 10 + rng() * 20, 15 + rng() * 15];
       const latest = backward(p, ds);
+
       if (!Number.isFinite(latest)) continue;
       const trip = forward(p, latest, ds);
       expect(trip.arrival).toBeLessThanOrEqual(p.deadline + 0.01);
@@ -412,16 +421,20 @@ describe("linked-delay stress model", () => {
     s.plans[0].steps[0].min = 5;
     s.plans[0].steps[0].max = 40;
     s.plans[0].steps.push({ ...s.plans[0].steps[0], id: "second" });
+
     return s;
   }
+
   it("keeps the original independent draw stream byte-for-byte at zero linkage", () => {
     const s = twoSteps();
     const rng = random(SEED);
+
     const original = Array.from({ length: 4096 }, () =>
       s.plans[0].steps.map((step) =>
         triangular(step.min, step.mode, step.max, rng()),
       ),
     );
+
     delete s.linkedDelays;
     expect(analyze(s, s.plans[0]).durations).toEqual(original);
     s.linkedDelays = 0;
@@ -439,10 +452,13 @@ describe("linked-delay stress model", () => {
     const s = twoSteps();
     s.linkedDelays = 0.5;
     const a = analyze(s, s.plans[0]);
+
     const linkedFraction =
       a.durations.filter(([x, y]) => x === y).length / a.durations.length;
+
     expect(linkedFraction).toBeGreaterThan(0.46);
     expect(linkedFraction).toBeLessThan(0.54);
+
     for (let j = 0; j < 2; j++) {
       const values = a.durations.map((ds) => ds[j]);
       expect(Math.min(...values)).toBeGreaterThanOrEqual(5);
@@ -462,14 +478,17 @@ describe("linked-delay stress model", () => {
     s.linkedDelays = 0.7;
     s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00";
     const a = analyze(s, s.plans[0]);
+
     const successes =
       a.durations.filter((ds) => {
         const t = forward(a.prepared!, a.recommendation!, ds);
+
         return (
           t.arrival <= a.prepared!.deadline + 0.01 &&
           t.missedCutoffs.length === 0
         );
       }).length / a.durations.length;
+
     expect(successes).toBeGreaterThanOrEqual(s.confidence);
     expect(successes).toBe(a.coverage);
   });
@@ -483,9 +502,11 @@ describe("version 2 migration", () => {
       p.steps.forEach((step) => delete step.finishByLocal),
     );
     const original = analyze(s, s.plans[0]).samples;
+
     const loaded = parseScenarioFile(
       JSON.stringify({ format: "leavewell", version: 1, scenario: s }),
     );
+
     expect(loaded.linkedDelays).toBe(0);
     expect(
       loaded.plans.every((p) =>
@@ -505,10 +526,12 @@ describe("version 2 migration", () => {
   });
   it("rejects invalid linkage, malformed checkpoint fields and nonexistent imported dates", () => {
     const s = fixed();
+
     for (const invalid of [-1, 1.1, NaN]) {
       s.linkedDelays = invalid;
       expect(() => validateScenario(s)).toThrow();
     }
+
     s.linkedDelays = 0;
     s.plans[0].steps[0].finishByLocal = "x".repeat(41);
     expect(() => validateScenario(s)).toThrow();

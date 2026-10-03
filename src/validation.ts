@@ -1,11 +1,41 @@
 import type { Scenario, ScenarioFile } from "./model";
 import { parseTime } from "./time";
 
-const object = (x: unknown): x is Record<string, unknown> =>
+interface BoundaryObject {
+  id?: unknown;
+  name?: unknown;
+  arrivalLocal?: unknown;
+  timeZone?: unknown;
+  disambiguation?: unknown;
+  earliestLocal?: unknown;
+  confidence?: unknown;
+  linkedDelays?: unknown;
+  finalBuffer?: unknown;
+  activePlanId?: unknown;
+  assumption?: unknown;
+  plans?: unknown;
+  steps?: unknown;
+  label?: unknown;
+  kind?: unknown;
+  min?: unknown;
+  mode?: unknown;
+  max?: unknown;
+  buffer?: unknown;
+  boardingBuffer?: unknown;
+  departures?: unknown;
+  finishByLocal?: unknown;
+  format?: unknown;
+  version?: unknown;
+  scenario?: unknown;
+}
+
+const object = (x: unknown): x is BoundaryObject =>
   !!x && typeof x === "object" && !Array.isArray(x);
-const text = (x: unknown, max = 100) =>
+
+const text = (x: unknown, max = 100): x is string =>
   typeof x === "string" && x.length > 0 && x.length <= max;
-const number = (x: unknown, max: number, min = 0) =>
+
+const number = (x: unknown, max: number, min = 0): x is number =>
   typeof x === "number" && Number.isFinite(x) && x >= min && x <= max;
 
 /** Validate imported/localStorage data before allowing it to enter the engine. */
@@ -33,25 +63,28 @@ export function validateScenario(data: unknown): asserts data is Scenario {
       "This scenario has missing or unsupported fields. Import a Leavewell version 1 or 2 file.",
     );
   }
+
   const planIds = new Set<string>();
+
   for (const p of data.plans) {
     if (
       !object(p) ||
       !text(p.id) ||
       !text(p.name) ||
-      planIds.has(p.id as string) ||
+      planIds.has(p.id) ||
       !Array.isArray(p.steps) ||
       p.steps.length < 1 ||
       p.steps.length > 20
     )
       throw new Error("Each plan needs a unique ID, a name, and 1–20 steps.");
-    planIds.add(p.id as string);
+    planIds.add(p.id);
     const stepIds = new Set<string>();
+
     for (const s of p.steps) {
       if (
         !object(s) ||
         !text(s.id) ||
-        stepIds.has(s.id as string) ||
+        stepIds.has(s.id) ||
         !text(s.label) ||
         !["walk", "drive", "transit", "task"].includes(String(s.kind)) ||
         !number(s.min, 1440) ||
@@ -67,23 +100,24 @@ export function validateScenario(data: unknown): asserts data is Scenario {
         throw new Error(
           "Step durations and buffers must be finite, nonnegative minutes within the supported limits.",
         );
-      if (
-        (s.min as number) > (s.mode as number) ||
-        (s.mode as number) > (s.max as number)
-      )
+
+      if (s.min > s.mode || s.mode > s.max)
         throw new Error(`${s.label}: use fastest ≤ typical ≤ slowest.`);
-      stepIds.add(s.id as string);
+      stepIds.add(s.id);
     }
   }
-  if (!planIds.has(data.activePlanId as string))
+
+  if (!planIds.has(data.activePlanId))
     throw new Error("The selected plan is missing.");
 }
+
 export function parseScenarioFile(raw: string): Scenario {
   if (raw.length > 500_000)
     throw new Error(
       "That file is too large. Choose a scenario file under 500 KB.",
     );
   let file: unknown;
+
   try {
     file = JSON.parse(raw);
   } catch {
@@ -91,10 +125,11 @@ export function parseScenarioFile(raw: string): Scenario {
       "This file is not valid JSON. Choose an exported Leavewell scenario.",
     );
   }
+
   if (
     !object(file) ||
     file.format !== "leavewell" ||
-    ![1, 2].includes(file.version as number)
+    (file.version !== 1 && file.version !== 2)
   )
     throw new Error(
       "Unsupported file format. Choose a Leavewell version 1 or 2 scenario.",
@@ -103,30 +138,39 @@ export function parseScenarioFile(raw: string): Scenario {
   // Imported files must be runnable. Editor drafts can temporarily be invalid.
   const s = file.scenario;
   parseTime(s.arrivalLocal, s.timeZone, s.disambiguation);
+
   if (s.earliestLocal) parseTime(s.earliestLocal, s.timeZone, s.disambiguation);
+
   for (const p of s.plans)
     for (const step of p.steps) {
       if (step.finishByLocal)
         parseTime(step.finishByLocal, s.timeZone, s.disambiguation);
+
       if (step.kind === "transit") {
         const entries = step.departures
           .split(/[\n,]+/)
           .map((v) => v.trim())
           .filter(Boolean);
+
         if (!entries.length || entries.length > 200)
           throw new Error(`${step.label}: enter 1–200 dated departures.`);
         entries.forEach((v) => parseTime(v, s.timeZone, s.disambiguation));
       }
     }
+
   return normalizeScenario(s);
 }
+
 export function exportScenario(scenario: Scenario): string {
+  // eslint-disable-next-line anti-slop/no-known-value-widening -- Export is a runtime boundary callable from JavaScript; keep defensive validation of caller-owned data.
   validateScenario(scenario);
+
   const file: ScenarioFile = {
     format: "leavewell",
     version: 2,
     scenario: normalizeScenario(scenario),
   };
+
   return JSON.stringify(file, null, 2);
 }
 

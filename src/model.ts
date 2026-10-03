@@ -1,5 +1,7 @@
 export type StepKind = "walk" | "drive" | "transit" | "task";
+
 export type Disambiguation = "reject" | "earlier" | "later";
+
 export interface Step {
   id: string;
   label: string;
@@ -13,11 +15,13 @@ export interface Step {
   /** Optional completion cutoff, before this step’s post-step buffer. */
   finishByLocal?: string;
 }
+
 export interface Plan {
   id: string;
   name: string;
   steps: Step[];
 }
+
 export interface Scenario {
   id: string;
   name: string;
@@ -33,12 +37,15 @@ export interface Scenario {
   plans: Plan[];
   assumption: string;
 }
+
 export interface ScenarioFile {
   format: "leavewell";
   version: 1 | 2;
   scenario: Scenario;
 }
+
 export const uid = () => crypto.randomUUID();
+
 export function newStep(kind: StepKind = "task"): Step {
   return {
     id: uid(),
@@ -52,4 +59,21 @@ export function newStep(kind: StepKind = "task"): Step {
     departures: "",
     finishByLocal: "",
   };
+}
+
+export function isStepKind(value: string): value is StepKind {
+  return (
+    value === "walk" ||
+    value === "drive" ||
+    value === "transit" ||
+    value === "task"
+  );
+}
+
+export function isDisambiguation(value: string): value is Disambiguation {
+  return value === "reject" || value === "earlier" || value === "later";
+}
+
+export function errorMessage(cause: unknown): string {
+  return cause instanceof Error ? cause.message : String(cause);
 }

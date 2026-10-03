@@ -1,4 +1,5 @@
 import type { Scenario, Step } from "./model";
+
 const step = (
   id: string,
   label: string,
@@ -33,11 +34,13 @@ export function airportDemo(): Scenario {
   ]
     .map((t) => `2026-10-03T${t}`)
     .join("\n");
+
   const common = [
     step("checkin", "Bag drop & check-in", "task", 5, 10, 20, 3),
     step("security", "Security queue", "task", 10, 20, 50),
     step("gate", "Walk to the gate", "walk", 8, 12, 18),
   ];
+
   return {
     id: "demo-airport",
     name: "Morning at the airport",
@@ -74,6 +77,7 @@ export function airportDemo(): Scenario {
     ],
   };
 }
+
 export function appointmentDemo(): Scenario {
   return {
     id: "demo-appointment",

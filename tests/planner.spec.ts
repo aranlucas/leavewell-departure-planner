@@ -4,7 +4,9 @@ import { resolve } from "node:path";
 import { airportDemo } from "../src/demo";
 import { exportScenario } from "../src/validation";
 import type { Page } from "@playwright/test";
+
 const errors = new WeakMap<Page, string[]>();
+
 test.beforeEach(async ({ page }) => {
   const list: string[] = [];
   errors.set(page, list);
@@ -15,10 +17,13 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("recommendation")).not.toHaveText("—");
 });
+
 test.afterEach(async ({ page }) => expect(errors.get(page)).toEqual([]));
+
 async function expandSettings(page: Page) {
   await page.getByText("Time settings & assumptions", { exact: true }).click();
 }
+
 async function resetDraft(page: Page) {
   await page.getByRole("button", { name: "Reset draft to demo" }).click();
   await page
@@ -58,9 +63,11 @@ test("duration, arrival buffer and coverage target interactions update the resul
   page,
 }) => {
   const original = await page.getByTestId("recommendation").innerText();
+
   const step = page
     .locator(".step-editor")
     .filter({ has: page.getByRole("button", { name: /Security queue/ }) });
+
   await step.getByRole("button", { name: /Security queue/ }).click();
   await step
     .getByRole("spinbutton", { name: "Slowest", exact: true })
@@ -88,9 +95,11 @@ test("alternative plans, add, reorder and remove steps work", async ({
     "Drive + park copy",
   );
   await page.getByRole("button", { name: "Task", exact: true }).click();
+
   const step = page
     .locator(".step-editor")
     .filter({ has: page.getByRole("button", { name: /New step/ }) });
+
   await step.getByRole("button", { name: /New step/ }).click();
   await step.getByLabel("Step name", { exact: true }).fill("Pack documents");
   await page.getByRole("button", { name: "Move Pack documents up" }).click();
@@ -132,6 +141,7 @@ test("invalid duration and missing connections show errors and recover", async (
   const step = page.locator(".step-editor").filter({
     has: page.getByRole("button", { name: /Train to the airport/ }),
   });
+
   await step.getByRole("button", { name: /Train to the airport/ }).click();
   await step
     .getByRole("spinbutton", { name: "Fastest", exact: true })
@@ -314,6 +324,7 @@ test("missing the final listed connection stays readable and never crashes the t
   const step = page.locator(".step-editor").filter({
     has: page.getByRole("button", { name: /Train to the airport/ }),
   });
+
   await step.getByRole("button", { name: /Train to the airport/ }).click();
   await step.getByLabel("Scheduled departures").fill("2026-10-03T06:12");
   await expect(page.getByTestId("recommendation")).not.toHaveText("—");
@@ -333,9 +344,11 @@ test("checkpoint cutoff moves departure, highlights missed completion, survives 
 }, info) => {
   await page.getByRole("button", { name: /Drive \+ park/ }).click();
   const original = await page.getByTestId("recommendation").innerText();
+
   const step = page
     .locator(".step-editor")
     .filter({ has: page.getByRole("button", { name: /Bag drop & check-in/ }) });
+
   await step.getByRole("button", { name: /Bag drop & check-in/ }).click();
   await step
     .getByLabel("Finish this step by", { exact: true })
@@ -380,9 +393,11 @@ test("checkpoint DST errors recover and legacy files migrate with unchanged depa
   page,
 }) => {
   await page.getByRole("button", { name: /Drive \+ park/ }).click();
+
   const step = page
     .locator(".step-editor")
     .filter({ has: page.getByRole("button", { name: /Bag drop & check-in/ }) });
+
   await step.getByRole("button", { name: /Bag drop & check-in/ }).click();
   await step
     .getByLabel("Finish this step by", { exact: true })
@@ -421,9 +436,11 @@ test("new assumptions edit, save and reload while network is disabled", async ({
   await expandSettings(page);
   await page.getByLabel("Linked-delay stress test").fill("100");
   await page.getByRole("button", { name: /Drive \+ park/ }).click();
+
   const step = page
     .locator(".step-editor")
     .filter({ has: page.getByRole("button", { name: /Bag drop & check-in/ }) });
+
   await step.getByRole("button", { name: /Bag drop & check-in/ }).click();
   await step
     .getByLabel("Finish this step by", { exact: true })
