@@ -16,7 +16,7 @@ npm start
 
 Open **http://127.0.0.1:4310**. The local server stays on loopback by default. After the first successful production load, the service worker caches the complete app shell. Reloading, calculating, editing, saving, and exporting continue offline. Exported scenarios are ordinary versioned JSON files, portable between devices through the Import button under Scenarios. New exports use format version 2; existing version 1 files and saved drafts migrate with independent durations and no added cutoffs.
 
-Development: `npm run dev` uses **https://leavewell-departure-planner.localhost**. The `npm run dev:direct` fallback uses port 4310, so stop the production server before using that fallback. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
+Development: `npm run dev` uses **https://leavewell-departure-planner.localhost**. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
 
 ```sh
 npm test
@@ -51,7 +51,6 @@ precedence over any port in `vite.config.ts`.
 
 Linked Git worktrees receive a branch-name prefix, such as
 `https://fix-ui.leavewell-departure-planner.localhost`; use the URL Portless prints.
-Use `npm run dev:direct` to run the original localhost server without Portless.
 
 Browser storage and offline caches belong to each origin. Existing data at a
 numbered localhost URL stays there; use the app's export/import flow when available
