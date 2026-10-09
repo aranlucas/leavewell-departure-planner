@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 4310 --strictPort",
-    "dev:portless": "portless run --name leavewell-departure-planner vite",
+    "dev": "portless run --name leavewell-departure-planner vite",
+    "dev:direct": "vite --host 127.0.0.1 --port 4310 --strictPort",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4310 --strictPort",
     "start": "node server.mjs",
