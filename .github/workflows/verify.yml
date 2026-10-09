@@ -1,12 +1,14 @@
 name: Verify Leavewell
-# Manual invocation avoids starting hosted compute without a confirmed budget.
 on:
+  push:
+  pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.LOCAL_CI_ENABLED == 'true'
+    runs-on: ${{ vars.LOCAL_CI_ENABLED == 'true' && fromJSON('["self-hosted","linux","x64","omarchy-ci"]') || 'ubuntu-latest' }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
