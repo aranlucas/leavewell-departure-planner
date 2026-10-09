@@ -16,7 +16,7 @@ npm start
 
 Open **http://127.0.0.1:4310**. The local server stays on loopback by default. After the first successful production load, the service worker caches the complete app shell. Reloading, calculating, editing, saving, and exporting continue offline. Exported scenarios are ordinary versioned JSON files, portable between devices through the Import button under Scenarios. New exports use format version 2; existing version 1 files and saved drafts migrate with independent durations and no added cutoffs.
 
-Development: `npm run dev` uses **https://leavewell-departure-planner.localhost**. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
+Development: `npm run dev` uses **https://leavewell.localhost**, served through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
 
 ```sh
 npm test
@@ -26,35 +26,6 @@ npm run test:e2e
 ```
 
 `npm run test:e2e` starts the local server if none is running. Screenshots and exported sample JSON land in `artifacts/`; they are ignored by Git. `npx prettier --check src tests` checks source formatting.
-
-### Development URL with Portless
-
-The normal `npm run dev` command uses
-[Portless](https://github.com/vercel-labs/portless/tree/v0.15.7) for a stable local URL.
-Install its CLI once with **Node.js 24 or newer** (within this project's supported
-range), then run:
-
-```sh
-npm install -g portless@0.15.7
-npm run dev
-```
-
-Open **https://leavewell-departure-planner.localhost** with the default proxy settings.
-Portless starts its shared proxy automatically. Its first HTTPS run creates and
-trusts a local certificate authority and may prompt for administrator privileges
-to bind port 443 or update local hostname entries. Start it from an interactive
-terminal and review those prompts. `portless doctor` diagnoses local setup issues.
-
-Portless supplies Vite with a free port, a loopback host, and `--strictPort`.
-The development command omits the usual fixed port; the injected CLI port takes
-precedence over any port in `vite.config.ts`.
-
-Linked Git worktrees receive a branch-name prefix, such as
-`https://fix-ui.leavewell-departure-planner.localhost`; use the URL Portless prints.
-
-Browser storage and offline caches belong to each origin. Existing data at a
-numbered localhost URL stays there; use the app's export/import flow when available
-to move data to the named URL.
 
 ## Use
 
