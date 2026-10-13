@@ -69,9 +69,9 @@ describe("time zones, DST and overnight trips", () => {
     ));
   it("rejects nonexistent civil times even when an occurrence is chosen", () => {
     for (const choice of ["reject", "earlier", "later"] as const)
-      expect(() =>
+      {expect(() =>
         parseTime("2026-03-08T02:30", "America/Los_Angeles", choice),
-      ).toThrow(/does not exist/);
+      ).toThrow(/does not exist/);}
   });
   it("requires a choice for repeated civil times", () =>
     expect(() => parseTime("2026-11-01T01:30", "America/Los_Angeles")).toThrow(
@@ -133,8 +133,8 @@ describe("distribution and percentile semantics", () => {
     expect(triangular(0, 10, 10, 1)).toBe(10);
   });
   it("seeded draws are stable and inside [0,1)", () => {
-    const a = random(42),
-      b = random(42);
+    const a = random(42);
+      const b = random(42);
 
     for (let i = 0; i < 1000; i++) {
       const v = a();
@@ -378,7 +378,8 @@ describe("intermediate completion cutoffs", () => {
       const ds = [5 + rng() * 15, 10 + rng() * 20, 15 + rng() * 15];
       const latest = backward(p, ds);
 
-      if (!Number.isFinite(latest)) continue;
+      if (!Number.isFinite(latest)) {continue;}
+
       const trip = forward(p, latest, ds);
       expect(trip.arrival).toBeLessThanOrEqual(p.deadline + 0.01);
       expect(trip.missedCutoffs).toEqual([]);

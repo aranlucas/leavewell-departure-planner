@@ -80,7 +80,8 @@ export function triangular(
   max: number,
   u: number,
 ): number {
-  if (min === max) return min;
+  if (min === max) {return min;}
+
   const split = (mode - min) / (max - min);
 
   return u < split
@@ -115,7 +116,7 @@ export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
         .filter(Boolean);
 
       if (!entries.length || entries.length > 200)
-        throw new Error(`${step.label}: enter 1–200 dated departures.`);
+        {throw new Error(`${step.label}: enter 1–200 dated departures.`);}
 
       try {
         schedule = [
@@ -126,7 +127,7 @@ export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
           ),
         ].sort((a, b) => a - b);
       } catch (error) {
-        throw new Error(`${step.label}: ${errorMessage(error)}`);
+        throw new Error(`${step.label}: ${errorMessage(error)}`, { cause: error });
       }
     }
 
@@ -140,7 +141,7 @@ export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
           scenario.disambiguation,
         );
       } catch (error) {
-        throw new Error(`${step.label} finish-by: ${errorMessage(error)}`);
+        throw new Error(`${step.label} finish-by: ${errorMessage(error)}`, { cause: error });
       }
     }
 
@@ -170,12 +171,13 @@ export function backward(prepared: PreparedPlan, durations: number[]): number {
       let departure = -Infinity;
 
       for (let k = s.schedule.length - 1; k >= 0; k--)
-        if (s.schedule[k] <= latest) {
+        {if (s.schedule[k] <= latest) {
           departure = s.schedule[k];
           break;
-        }
+        }}
 
-      if (!Number.isFinite(departure)) return -Infinity;
+      if (!Number.isFinite(departure)) {return -Infinity;}
+
       latest = departure - s.boardingBuffer * MINUTE;
     }
   }
@@ -212,7 +214,8 @@ export function forward(
 
     // Allow only sub-millisecond floating-point roundoff at inclusive equality.
     if (s.finishBy !== null && completed > s.finishBy + 0.01)
-      missedCutoffs.push(s.id);
+      {missedCutoffs.push(s.id);}
+
     rows.push({
       step: s,
       start,
@@ -234,7 +237,8 @@ export function departureQuantile(
   samples: number[],
   confidence: number,
 ): number | null {
-  if (!samples.length) return null;
+  if (!samples.length) {return null;}
+
   const sorted = [...samples].sort((a, b) => a - b);
   const index = samples.length - Math.ceil(confidence * samples.length);
   const value = sorted[Math.max(0, index)];
@@ -365,7 +369,8 @@ export function connectionRisks(
   departure: number,
   rows: TimelineRow[],
 ): { id: string; cutoff: number; miss: number; next: number | null }[] {
-  if (!analysis.prepared) return [];
+  if (!analysis.prepared) {return [];}
+
   const p = analysis.prepared;
   const runs = analysis.durations.map((ds) => forward(p, departure, ds));
 
@@ -375,7 +380,7 @@ export function connectionRisks(
       row.departure === null ||
       !Number.isFinite(row.departure)
     )
-      return [];
+      {return [];}
 
     return [
       {
@@ -396,10 +401,10 @@ export function histogram(
 ): { min: number; max: number; counts: number[] } | null {
   const values = samples.filter(Number.isFinite);
 
-  if (!values.length) return null;
+  if (!values.length) {return null;}
 
-  const min = Math.min(...values),
-    max = Math.max(...values);
+  const min = Math.min(...values);
+    const max = Math.max(...values);
 
   const width = Math.max(max - min, MINUTE);
   const counts = Array.from({ length: bins }, () => 0);
@@ -415,17 +420,19 @@ export function checkpointRisks(
   analysis: Analysis,
   leave: number,
 ): { id: string; miss: number }[] {
-  if (!analysis.prepared || !analysis.durations.length) return [];
+  if (!analysis.prepared || !analysis.durations.length) {return [];}
+
   const steps = analysis.prepared.steps.filter((s) => s.finishBy !== null);
 
-  if (!steps.length) return [];
+  if (!steps.length) {return [];}
+
   const counts = new Map(steps.map((s) => [s.id, 0]));
 
   for (const durations of analysis.durations) {
     const trip = forward(analysis.prepared, leave, durations);
 
     for (const id of trip.missedCutoffs)
-      counts.set(id, (counts.get(id) ?? 0) + 1);
+      {counts.set(id, (counts.get(id) ?? 0) + 1);}
   }
 
   return steps.map((s) => ({

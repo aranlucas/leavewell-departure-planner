@@ -1,4 +1,4 @@
-import { errorMessage, isDisambiguation } from "./model";
+import { errorMessage, isDisambiguation,newStep,uid } from "./model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { airportDemo, appointmentDemo } from "./demo";
 import { analyze } from "./engine";
-import { newStep, uid } from "./model";
 import type { Plan, Scenario } from "./model";
 import { persistWorkspace, readWorkspace } from "./storage";
 import { exportScenario, parseScenarioFile } from "./validation";
@@ -56,7 +55,7 @@ export default function App() {
       : analysis.recommendation + offset * MINUTE;
 
   useEffect(() => {
-    if (pauseSaving) return;
+    if (pauseSaving) {return;}
 
     try {
       setPersisted(persistWorkspace(scenario, saved));
@@ -81,7 +80,7 @@ export default function App() {
     window.addEventListener("offline-cache-error", cacheFailure);
 
     if (import.meta.env.PROD && "serviceWorker" in navigator)
-      navigator.serviceWorker.ready.then(() => setOfflineReady(true));
+      {navigator.serviceWorker.ready.then(() => setOfflineReady(true));}
 
     return () => {
       window.removeEventListener("online", change);
@@ -90,7 +89,8 @@ export default function App() {
     };
   }, []);
   useEffect(() => {
-    if (!notice) return;
+    if (!notice) {return;}
+
     const timer = setTimeout(() => setNotice(""), 8000);
 
     return () => clearTimeout(timer);
@@ -116,14 +116,14 @@ export default function App() {
       exportScenario(scenario);
 
       if (analyses.some((a) => a.error))
-        throw new Error(
+        {throw new Error(
           "Resolve the highlighted model inputs before saving a named scenario.",
-        );
+        );}
 
       if (saved.length >= 20 && !saved.some((s) => s.id === scenario.id))
-        throw new Error(
+        {throw new Error(
           "You have 20 saved scenarios. Export or remove one before saving another.",
-        );
+        );}
 
       const next = [
         ...saved.filter((s) => s.id !== scenario.id),
@@ -152,9 +152,9 @@ export default function App() {
       const raw = exportScenario(scenario);
 
       if (analyses.some((a) => a.error))
-        throw new Error(
+        {throw new Error(
           "Resolve the model input errors before exporting a portable scenario.",
-        );
+        );}
 
       const url = URL.createObjectURL(
         new Blob([raw], { type: "application/json" }),
@@ -165,8 +165,8 @@ export default function App() {
       a.download = `leavewell-${
         scenario.name
           .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/^-|-$/g, "") || "scenario"
+          .replaceAll(/[^a-z0-9]+/g, "-")
+          .replaceAll(/^-|-$/g, "") || "scenario"
       }.json`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -381,7 +381,7 @@ export default function App() {
                     const value = e.target.value;
 
                     if (isDisambiguation(value))
-                      update({ disambiguation: value });
+                      {update({ disambiguation: value });}
                   }}
                 >
                   <option value="reject">Require an explicit choice</option>
@@ -662,11 +662,12 @@ export default function App() {
         onChange={async (e) => {
           const file = e.target.files?.[0];
 
-          if (!file) return;
+          if (!file) {return;}
 
           try {
             if (file.size > 500000)
-              throw new Error("Choose a scenario file under 500 KB.");
+              {throw new Error("Choose a scenario file under 500 KB.");}
+
             const imported = parseScenarioFile(await file.text());
             load({ ...imported, id: uid() });
             setNotice(

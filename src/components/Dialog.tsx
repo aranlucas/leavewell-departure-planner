@@ -20,7 +20,7 @@ export default function Dialog({
     return () => {
       dialog?.close();
 
-      if (previous instanceof HTMLElement) previous.focus();
+      if (previous instanceof HTMLElement) {previous.focus();}
     };
   }, []);
 
@@ -34,7 +34,7 @@ export default function Dialog({
         onClose();
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) {onClose();}
       }}
     >
       <div className="dialog-inner">
