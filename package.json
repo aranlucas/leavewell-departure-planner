@@ -11,7 +11,10 @@
     "test": "vitest run --maxWorkers=1 --minWorkers=1",
     "test:e2e": "playwright test",
     "lint": "oxlint .",
-    "check": "npm run lint && npm test && npm run build"
+    "check": "npm run lint && npm test && npm run build",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt --write",
+    "format:check": "oxfmt --check"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",
@@ -20,13 +23,16 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@aranlucas/oxforge": "^0.1.1",
     "@aranlucas/oxlint-plugin-anti-slop": "0.1.0",
     "@playwright/test": "1.63.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "4.7.0",
-    "oxlint": "1.86.0",
+    "oxfmt": "^0.73.0",
+    "oxlint": "1.88.0",
+    "oxlint-tsgolint": "^7.0.2004",
     "portless": "0.15.7",
     "prettier": "3.5.2",
     "typescript": "5.9.3",

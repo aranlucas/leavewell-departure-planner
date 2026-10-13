@@ -69,7 +69,7 @@ export function timeLabel(
   zone: string,
   date = false,
 ): string {
-  if (epoch === null || !Number.isFinite(epoch)) return "—";
+  if (epoch === null || !Number.isFinite(epoch)) {return "—";}
 
   const options: Intl.DateTimeFormatOptions = {
     timeZone: zone,

@@ -76,7 +76,8 @@ export function validateScenario(data: unknown): asserts data is Scenario {
       p.steps.length < 1 ||
       p.steps.length > 20
     )
-      throw new Error("Each plan needs a unique ID, a name, and 1–20 steps.");
+      {throw new Error("Each plan needs a unique ID, a name, and 1–20 steps.");}
+
     planIds.add(p.id);
     const stepIds = new Set<string>();
 
@@ -97,25 +98,27 @@ export function validateScenario(data: unknown): asserts data is Scenario {
         (s.finishByLocal !== undefined &&
           (typeof s.finishByLocal !== "string" || s.finishByLocal.length > 40))
       )
-        throw new Error(
+        {throw new Error(
           "Step durations and buffers must be finite, nonnegative minutes within the supported limits.",
-        );
+        );}
 
       if (s.min > s.mode || s.mode > s.max)
-        throw new Error(`${s.label}: use fastest ≤ typical ≤ slowest.`);
+        {throw new Error(`${s.label}: use fastest ≤ typical ≤ slowest.`);}
+
       stepIds.add(s.id);
     }
   }
 
   if (!planIds.has(data.activePlanId))
-    throw new Error("The selected plan is missing.");
+    {throw new Error("The selected plan is missing.");}
 }
 
 export function parseScenarioFile(raw: string): Scenario {
   if (raw.length > 500_000)
-    throw new Error(
+    {throw new Error(
       "That file is too large. Choose a scenario file under 500 KB.",
-    );
+    );}
+
   let file: unknown;
 
   try {
@@ -131,20 +134,21 @@ export function parseScenarioFile(raw: string): Scenario {
     file.format !== "leavewell" ||
     (file.version !== 1 && file.version !== 2)
   )
-    throw new Error(
+    {throw new Error(
       "Unsupported file format. Choose a Leavewell version 1 or 2 scenario.",
-    );
+    );}
+
   validateScenario(file.scenario);
   // Imported files must be runnable. Editor drafts can temporarily be invalid.
   const s = file.scenario;
   parseTime(s.arrivalLocal, s.timeZone, s.disambiguation);
 
-  if (s.earliestLocal) parseTime(s.earliestLocal, s.timeZone, s.disambiguation);
+  if (s.earliestLocal) {parseTime(s.earliestLocal, s.timeZone, s.disambiguation);}
 
   for (const p of s.plans)
-    for (const step of p.steps) {
+    {for (const step of p.steps) {
       if (step.finishByLocal)
-        parseTime(step.finishByLocal, s.timeZone, s.disambiguation);
+        {parseTime(step.finishByLocal, s.timeZone, s.disambiguation);}
 
       if (step.kind === "transit") {
         const entries = step.departures
@@ -153,10 +157,10 @@ export function parseScenarioFile(raw: string): Scenario {
           .filter(Boolean);
 
         if (!entries.length || entries.length > 200)
-          throw new Error(`${step.label}: enter 1–200 dated departures.`);
+          {throw new Error(`${step.label}: enter 1–200 dated departures.`);}
         entries.forEach((v) => parseTime(v, s.timeZone, s.disambiguation));
       }
-    }
+    }}
 
   return normalizeScenario(s);
 }

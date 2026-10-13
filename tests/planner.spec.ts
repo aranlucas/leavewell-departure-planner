@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
   errors.set(page, list);
   page.on("pageerror", (e) => list.push(e.message));
   page.on("console", (m) => {
-    if (m.type() === "error") list.push(m.text());
+    if (m.type() === "error") {list.push(m.text());}
   });
   await page.goto("/");
   await expect(page.getByTestId("recommendation")).not.toHaveText("—");

@@ -7,7 +7,8 @@ self.addEventListener("install", (event) => {
       const cache = await caches.open(CACHE);
       const response = await fetch("/", { cache: "reload" });
 
-      if (!response.ok) throw new Error("Shell unavailable");
+      if (!response.ok) {throw new Error("Shell unavailable");}
+
       const html = await response.clone().text();
 
       const assets = [
@@ -27,8 +28,9 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       for (const name of await caches.keys())
-        if (name.startsWith("leavewell-shell-") && name !== CACHE)
-          await caches.delete(name);
+        {if (name.startsWith("leavewell-shell-") && name !== CACHE)
+          {await caches.delete(name);}}
+
       await self.clients.claim();
     })(),
   );
@@ -38,7 +40,7 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   if (event.request.method !== "GET" || url.origin !== self.location.origin)
-    return;
+    {return;}
 
   if (event.request.mode === "navigate") {
     event.respondWith(
@@ -46,7 +48,7 @@ self.addEventListener("fetch", (event) => {
         try {
           const response = await fetch(event.request);
 
-          if (response.ok) return response;
+          if (response.ok) {return response;}
         } catch {
           /* Fall back to the last complete shell. */
         }

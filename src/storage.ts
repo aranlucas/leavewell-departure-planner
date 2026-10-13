@@ -16,12 +16,14 @@ export function readWorkspace(): Workspace {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
 
-    if (!raw) return fallback;
+    if (!raw) {return fallback;}
+
     const data = JSON.parse(raw);
     validateScenario(data.draft);
 
     if (!Array.isArray(data.saved) || data.saved.length > 20)
-      throw new Error("Invalid saved list");
+      {throw new Error("Invalid saved list");}
+
     data.saved.forEach(validateScenario);
 
     return {

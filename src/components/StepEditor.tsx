@@ -92,7 +92,7 @@ export default function StepEditor({
                 onChange={(e) => {
                   const value = e.target.value;
 
-                  if (isStepKind(value)) update({ kind: value });
+                  if (isStepKind(value)) {update({ kind: value });}
                 }}
               >
                 {Object.entries(kindNames).map(([k, v]) => (

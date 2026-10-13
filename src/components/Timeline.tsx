@@ -14,7 +14,8 @@ export default function Timeline({
   scenario: Scenario;
   leave: number | null;
 }) {
-  if (!analysis.prepared || leave === null) return null;
+  if (!analysis.prepared || leave === null) {return null;}
+
   const p = analysis.prepared;
 
   const trip = forward(
