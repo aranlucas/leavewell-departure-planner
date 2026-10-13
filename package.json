@@ -20,17 +20,17 @@
     "react-dom": "19.2.8"
   },
   "devDependencies": {
+    "@aranlucas/oxlint-plugin-anti-slop": "0.1.0",
     "@playwright/test": "1.63.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vitejs/plugin-react": "4.7.0",
+    "oxlint": "1.86.0",
+    "portless": "0.15.7",
     "prettier": "3.5.2",
     "typescript": "5.9.3",
     "vite": "6.4.3",
-    "vitest": "2.1.9",
-    "oxlint": "1.86.0",
-    "@oxlint/plugins": "1.86.0",
-    "portless": "0.15.7"
+    "vitest": "2.1.9"
   }
 }
