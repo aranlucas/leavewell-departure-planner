@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { airportDemo } from "./demo";
-import { persistWorkspace, readWorkspace, STORAGE_KEY } from "./storage";
+import { airportDemo } from "@/demo";
+import { persistWorkspace, readWorkspace, STORAGE_KEY } from "@/storage";
 
 function mockStorage(raw: string | null) {
   const getItem = vi.fn(() => raw);

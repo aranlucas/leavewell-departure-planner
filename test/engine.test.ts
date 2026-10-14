@@ -1,5 +1,5 @@
 import { assert, describe, expect, it } from "vitest";
-import { airportDemo, appointmentDemo } from "./demo";
+import { airportDemo, appointmentDemo } from "@/demo";
 import {
   analyze,
   checkpointRisks,
@@ -12,10 +12,10 @@ import {
   prepare,
   random,
   triangular,
-} from "./engine";
-import type { Scenario } from "./model";
-import { MINUTE, offsetLabel, parseTime } from "./time";
-import { exportScenario, parseScenarioFile, validateScenario } from "./validation";
+} from "@/engine";
+import type { Scenario } from "@/model";
+import { MINUTE, offsetLabel, parseTime } from "@/time";
+import { exportScenario, parseScenarioFile, validateScenario } from "@/validation";
 
 function fixed(minutes = 60): Scenario {
   const s = appointmentDemo();
