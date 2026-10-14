@@ -21,7 +21,8 @@
     "@js-temporal/polyfill": "0.5.1",
     "lucide-react": "0.552.0",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@aranlucas/oxforge": "^0.1.3",

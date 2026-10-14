@@ -54,3 +54,38 @@ it("does not overwrite storage with an incomplete editor draft", () => {
   expect(persistWorkspace(scenario, [])).toBe(false);
   expect(storage.setItem).not.toHaveBeenCalled();
 });
+
+it("accepts 20 saved scenarios and preserves extension data", () => {
+  const scenario = { ...airportDemo(), extension: { note: "retained" } };
+
+  const storage = mockStorage(
+    JSON.stringify({ draft: scenario, saved: Array.from({ length: 20 }, () => scenario) }),
+  );
+
+  const workspace = readWorkspace();
+  expect(workspace.warning).toBe("");
+  expect(workspace.saved).toHaveLength(20);
+  expect(workspace.draft).toMatchObject({ extension: { note: "retained" } });
+  expect(workspace.saved[19]).toMatchObject({ extension: { note: "retained" } });
+  expect(storage.setItem).not.toHaveBeenCalled();
+});
+
+it("rejects a malformed later saved entry without partially loading or overwriting storage", () => {
+  const scenario = airportDemo();
+  const malformed = { ...scenario, confidence: "0.9" };
+  const storage = mockStorage(JSON.stringify({ draft: scenario, saved: [scenario, malformed] }));
+  const workspace = readWorkspace();
+  expect(workspace.warning).toContain("has not been erased");
+  expect(workspace.saved).toEqual([]);
+  expect(storage.setItem).not.toHaveBeenCalled();
+});
+
+it("retains incomplete date text in a structurally valid editor draft", () => {
+  const scenario = { ...airportDemo(), arrivalLocal: "incomplete date" };
+  const storage = mockStorage(null);
+  expect(persistWorkspace(scenario, [])).toBe(true);
+  expect(storage.setItem).toHaveBeenCalledWith(
+    STORAGE_KEY,
+    JSON.stringify({ draft: scenario, saved: [] }),
+  );
+});

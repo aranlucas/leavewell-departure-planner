@@ -1,6 +1,7 @@
+import { z } from "zod";
 import { airportDemo } from "./demo";
 import type { Scenario } from "./model";
-import { normalizeScenario, validateScenario } from "./validation";
+import { normalizeScenario, scenarioSchema, validateScenario } from "./validation";
 
 export const STORAGE_KEY = "leavewell.v1";
 
@@ -9,6 +10,11 @@ export interface Workspace {
   saved: Scenario[];
   warning: string;
 }
+
+const workspaceSchema = z.object({
+  draft: scenarioSchema,
+  saved: z.array(scenarioSchema).max(20),
+});
 
 export function readWorkspace(): Workspace {
   const fallback = { draft: airportDemo(), saved: [], warning: "" };
@@ -22,26 +28,11 @@ export function readWorkspace(): Workspace {
 
     const data: unknown = JSON.parse(raw);
 
-    if (!data || typeof data !== "object" || !("draft" in data) || !("saved" in data)) {
-      throw new Error("Invalid workspace");
-    }
-
-    validateScenario(data.draft);
-
-    if (!Array.isArray(data.saved) || data.saved.length > 20) {
-      throw new Error("Invalid saved list");
-    }
-
-    const saved: Scenario[] = [];
-
-    for (const candidate of data.saved) {
-      validateScenario(candidate);
-      saved.push(normalizeScenario(candidate));
-    }
+    const workspace = workspaceSchema.parse(data);
 
     return {
-      draft: normalizeScenario(data.draft),
-      saved,
+      draft: normalizeScenario(workspace.draft),
+      saved: workspace.saved.map((scenario) => normalizeScenario(scenario)),
       warning: "",
     };
   } catch {
