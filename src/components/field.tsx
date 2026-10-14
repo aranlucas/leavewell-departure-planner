@@ -1,18 +1,8 @@
 import { Children, cloneElement, isValidElement, useId } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 
-export function Field({
-  label,
-  hint,
-  children,
-}: {
-  label: string;
-  hint?: string;
-  children: ReactNode;
-}) {
+export function Field({ label, hint, children }: FieldProps) {
   const generatedId = useId();
-
-  type ControlProps = { id?: string; "aria-describedby"?: string };
 
   const isControl = (child: ReactNode) =>
     isValidElement<ControlProps>(child) &&
@@ -55,12 +45,7 @@ export function NumberField({
   onChange,
   max = 1440,
   ...props
-}: {
-  label: string;
-  value: number;
-  onChange: (n: number) => void;
-  max?: number;
-} & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
+}: NumberFieldProps & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
   const id = useId();
 
   return (
@@ -82,3 +67,18 @@ export function NumberField({
     </label>
   );
 }
+
+type ControlProps = { id?: string; "aria-describedby"?: string };
+
+type FieldProps = {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+};
+
+type NumberFieldProps = {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  max?: number;
+};

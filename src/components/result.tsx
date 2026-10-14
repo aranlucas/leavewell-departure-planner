@@ -5,18 +5,9 @@ import type { Analysis } from "../engine";
 import type { Scenario } from "../model";
 import { MINUTE, offsetLabel, timeLabel } from "../time";
 
-export default function Result({
-  analysis,
-  scenario,
-  offset,
-  setOffset,
-}: {
-  analysis: Analysis;
-  scenario: Scenario;
-  offset: number;
-  setOffset: (n: number) => void;
-}) {
-  const leave = analysis.recommendation === null ? null : analysis.recommendation + offset * MINUTE;
+export default function Result({ analysis, scenario, offset, setOffset }: ResultProps) {
+  const { recommendation } = analysis;
+  const leave = recommendation === null ? null : recommendation + offset * MINUTE;
 
   const coverage = coverageAt(analysis.samples, leave);
   const chart = useMemo(() => histogram(analysis.samples), [analysis.samples]);
@@ -73,7 +64,7 @@ export default function Result({
           {SAMPLE_COUNT.toLocaleString()} repeatable model runs · rounded earlier to the minute
         </div>
       </section>
-      {analysis.prepared && analysis.recommendation !== null && (
+      {analysis.prepared && recommendation !== null && (
         <>
           <section className="what-if">
             <div className="section-heading">
@@ -101,9 +92,11 @@ export default function Result({
                 {Math.round(coverage * 100)}% on time in model
               </span>
             </div>
-            {analysis.prepared.earliest !== null && leave! < analysis.prepared.earliest && (
-              <p className="risk-text">This departure is before your earliest allowed time.</p>
-            )}
+            {analysis.prepared.earliest !== null &&
+              leave !== null &&
+              leave < analysis.prepared.earliest && (
+                <p className="risk-text">This departure is before your earliest allowed time.</p>
+              )}
             <button
               type="button"
               className="text-button"
@@ -131,8 +124,8 @@ export default function Result({
 
                   return (
                     <div
-                      key={i}
-                      className={boundary < analysis.recommendation! ? "risk-bar" : ""}
+                      key={boundary}
+                      className={boundary < recommendation ? "risk-bar" : ""}
                       style={{
                         height: `${Math.max(2, (n / Math.max(...chart.counts)) * 100)}%`,
                       }}
@@ -142,7 +135,7 @@ export default function Result({
                 <span
                   className="recommendation-marker"
                   style={{
-                    left: `${Math.max(0, Math.min(100, ((analysis.recommendation! - chart.min) / (chart.max - chart.min)) * 100))}%`,
+                    left: `${Math.max(0, Math.min(100, ((recommendation - chart.min) / (chart.max - chart.min)) * 100))}%`,
                   }}
                 />
               </div>
@@ -248,3 +241,10 @@ export default function Result({
     </aside>
   );
 }
+
+type ResultProps = {
+  analysis: Analysis;
+  scenario: Scenario;
+  offset: number;
+  setOffset: (n: number) => void;
+};

@@ -159,7 +159,9 @@ export function parseScenarioFile(raw: string): Scenario {
           throw new Error(`${step.label}: enter 1–200 dated departures.`);
         }
 
-        entries.forEach((v) => parseTime(v, s.timeZone, s.disambiguation));
+        for (const v of entries) {
+          parseTime(v, s.timeZone, s.disambiguation);
+        }
       }
     }
   }

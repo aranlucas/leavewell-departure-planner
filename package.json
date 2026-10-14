@@ -8,13 +8,14 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4310 --strictPort",
     "start": "node server.mjs",
-    "test": "vitest run --maxWorkers=1 --minWorkers=1",
+    "test": "npm run typecheck:tooling && vitest run --maxWorkers=1 --minWorkers=1",
     "test:e2e": "playwright test",
     "lint": "oxlint .",
     "check": "npm run lint && npm test && npm run build",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --write",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "typecheck:tooling": "tsc --noEmit -p tsconfig.tooling.json && tsc --noEmit -p public/tsconfig.json"
   },
   "dependencies": {
     "@js-temporal/polyfill": "0.5.1",

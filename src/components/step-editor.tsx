@@ -1,31 +1,9 @@
+import { icons, kindNames } from "../step-kinds";
 import { isStepKind } from "../model";
-import {
-  ArrowDown,
-  ArrowUp,
-  Car,
-  ChevronDown,
-  Footprints,
-  ListChecks,
-  TrainFront,
-  Trash2,
-} from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { Step } from "../model";
-import { Field, NumberField } from "./Field";
-
-export const icons = {
-  walk: Footprints,
-  drive: Car,
-  transit: TrainFront,
-  task: ListChecks,
-};
-
-export const kindNames = {
-  walk: "Walking",
-  drive: "Driving",
-  transit: "Scheduled transit",
-  task: "Check-in / task",
-};
+import { Field, NumberField } from "./field";
 
 export default function StepEditor({
   step,
@@ -34,14 +12,7 @@ export default function StepEditor({
   onChange,
   onMove,
   onDelete,
-}: {
-  step: Step;
-  index: number;
-  total: number;
-  onChange: (s: Step) => void;
-  onMove: (d: number) => void;
-  onDelete: () => void;
-}) {
+}: StepEditorProps) {
   const [open, setOpen] = useState(false);
   const Icon = icons[step.kind];
   const update = (patch: Partial<Step>) => onChange({ ...step, ...patch });
@@ -196,3 +167,12 @@ export default function StepEditor({
     </div>
   );
 }
+
+type StepEditorProps = {
+  step: Step;
+  index: number;
+  total: number;
+  onChange: (s: Step) => void;
+  onMove: (d: number) => void;
+  onDelete: () => void;
+};

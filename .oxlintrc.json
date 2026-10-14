@@ -41,8 +41,12 @@
   "options": {
     "typeAware": true
   },
-  "rules": {
-    "typescript/no-non-null-assertion": "off",
-    "anti-slop/no-runtime-typeof": "off"
-  }
+  "overrides": [
+    {
+      "files": ["src/validation.ts", "src/storage.ts"],
+      "rules": {
+        "anti-slop/no-runtime-typeof": "off"
+      }
+    }
+  ]
 }

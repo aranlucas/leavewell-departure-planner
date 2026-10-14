@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { assert, describe, expect, it } from "vitest";
 import { airportDemo, appointmentDemo } from "./demo";
 import {
   analyze,
@@ -155,9 +155,10 @@ describe("distribution and percentile semantics", () => {
   it("is repeatable and gets no later when confidence rises", () => {
     const s = airportDemo();
     const a = analyze(s, s.plans[0]);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
     expect(analyze(s, s.plans[0]).samples).toEqual(a.samples);
     s.confidence = 0.99;
-    expect(analyze(s, s.plans[0]).recommendation!).toBeLessThanOrEqual(a.recommendation!);
+    expect(analyze(s, s.plans[0]).recommendation).toBeLessThanOrEqual(a.recommendation);
     expect(a.coverage).toBeGreaterThanOrEqual(0.9);
   });
   it("the recommendation is never later than the typical quantile for symmetric simple data", () => {
@@ -165,8 +166,10 @@ describe("distribution and percentile semantics", () => {
     s.plans[0].steps[0].min = 10;
     s.plans[0].steps[0].max = 50;
     const a = analyze(s, s.plans[0]);
-    expect(a.recommendation!).toBeLessThan(a.typical!);
-    expect(a.bounded!).toBeLessThanOrEqual(a.recommendation!);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
+    assert(a.typical !== null, "Expected a typical departure");
+    expect(a.recommendation).toBeLessThan(a.typical);
+    expect(a.bounded).toBeLessThanOrEqual(a.recommendation);
   });
 });
 
@@ -203,7 +206,8 @@ describe("connections, buffers and constraints", () => {
   });
   it("adding step and arrival buffers moves departure earlier", () => {
     const s = fixed(60);
-    const original = analyze(s, s.plans[0]).recommendation!;
+    const original = analyze(s, s.plans[0]).recommendation;
+    assert(original !== null, "Expected an original departure");
     s.finalBuffer = 10;
     s.plans[0].steps[0].buffer = 5;
     expect(analyze(s, s.plans[0]).recommendation).toBe(original - 15 * MINUTE);
@@ -217,6 +221,7 @@ describe("connections, buffers and constraints", () => {
     const s = fixed(60);
     s.earliestLocal = "2026-10-03T07:30";
     const a = analyze(s, s.plans[0]);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
     expect(a.status).toBe("constraint");
     expect(a.earliestCoverage).toBe(0);
   });
@@ -247,8 +252,9 @@ describe("connections, buffers and constraints", () => {
     const s = transitScenario();
     s.plans[0].steps[1].departures = "2026-10-03T09:30";
     const a = analyze(s, s.plans[0]);
-    const t = forward(a.prepared!, a.recommendation!, [10, 20]);
-    const r = connectionRisks(a, a.recommendation! + 1, t.rows);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
+    const t = forward(a.prepared, a.recommendation, [10, 20]);
+    const r = connectionRisks(a, a.recommendation + 1, t.rows);
     expect(r[0].cutoff).toBe(epoch("2026-10-03T09:28"));
     expect(r[0].miss).toBe(1);
     expect(r[0].next).toBeNull();
@@ -270,7 +276,7 @@ describe("portable files and defensive validation", () => {
     expect(() => validateScenario(s)).toThrow(/finite/);
     s.plans[0].steps[0].min = 1;
     s.finalBuffer = -1;
-    expect(() => validateScenario(s)).toThrow();
+    expect(() => validateScenario(s)).toThrow(/missing or unsupported/);
   });
   it("bounds plans, steps, imports and schedules", () => {
     const s = fixed();
@@ -278,7 +284,9 @@ describe("portable files and defensive validation", () => {
     expect(() => validateScenario(s)).toThrow(/1–20/);
     expect(() => parseScenarioFile(" ".repeat(500001))).toThrow(/too large/);
     const t = transitScenario();
-    t.plans[0].steps[1].departures = Array(201).fill("2026-10-03T09:00").join("\n");
+    t.plans[0].steps[1].departures = Array.from({ length: 201 }, () => "2026-10-03T09:00").join(
+      "\n",
+    );
     expect(analyze(t, t.plans[0]).error).toMatch(/1–200/);
   });
   it("rejects imported invalid dated departures", () => {
@@ -292,7 +300,7 @@ describe("portable files and defensive validation", () => {
     expect(() => validateScenario(s)).toThrow(/unique/);
     const t = fixed();
     t.plans[0].steps.push({ ...t.plans[0].steps[0] });
-    expect(() => validateScenario(t)).toThrow();
+    expect(() => validateScenario(t)).toThrow(/finite/);
   });
 });
 
@@ -321,6 +329,7 @@ describe("intermediate completion cutoffs", () => {
   it("ignores a nonbinding later checkpoint and tightens transit arrival cutoffs", () => {
     const s = transitScenario();
     const original = analyze(s, s.plans[0]).recommendation;
+    assert(original !== null, "Expected an original departure");
     s.plans[0].steps[1].finishByLocal = "2026-10-03T11:00";
     expect(analyze(s, s.plans[0]).recommendation).toBe(original);
     s.plans[0].steps[1].finishByLocal = "2026-10-03T09:45";
@@ -361,9 +370,10 @@ describe("intermediate completion cutoffs", () => {
     const s = fixed(10);
     s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00";
     const a = analyze(s, s.plans[0]);
-    expect(checkpointRisks(a, a.recommendation!)[0].miss).toBe(0);
-    expect(checkpointRisks(a, a.recommendation! + MINUTE)[0].miss).toBe(1);
-    expect(coverageAt(a.samples, a.recommendation! + MINUTE)).toBe(0);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
+    expect(checkpointRisks(a, a.recommendation)[0].miss).toBe(0);
+    expect(checkpointRisks(a, a.recommendation + MINUTE)[0].miss).toBe(1);
+    expect(coverageAt(a.samples, a.recommendation + MINUTE)).toBe(0);
   });
   it("resolves overnight and DST checkpoint dates rather than comparing clock strings", () => {
     const s = fixed(60);
@@ -398,6 +408,7 @@ describe("linked-delay stress model", () => {
     const s = twoSteps();
     s.linkedDelays = 1;
     const a = analyze(s, s.plans[0]);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
     expect(a.durations.every(([first, second]) => first === second)).toBe(true);
     expect(analyze(s, s.plans[0]).samples).toEqual(a.samples);
     expect(a.coverage).toBeGreaterThanOrEqual(s.confidence);
@@ -406,6 +417,7 @@ describe("linked-delay stress model", () => {
     const s = twoSteps();
     s.linkedDelays = 0.5;
     const a = analyze(s, s.plans[0]);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
 
     const linkedFraction = a.durations.filter(([x, y]) => x === y).length / a.durations.length;
 
@@ -422,21 +434,25 @@ describe("linked-delay stress model", () => {
   });
   it("moves the high-coverage departure earlier for linked identical simple steps", () => {
     const s = twoSteps();
-    const independent = analyze(s, s.plans[0]).recommendation!;
+    const independent = analyze(s, s.plans[0]).recommendation;
+    assert(independent !== null, "Expected an independent departure");
     s.linkedDelays = 1;
-    expect(analyze(s, s.plans[0]).recommendation!).toBeLessThan(independent);
+    expect(analyze(s, s.plans[0]).recommendation).toBeLessThan(independent);
   });
   it("enforces checkpoints and target coverage under partial linkage", () => {
     const s = twoSteps();
     s.linkedDelays = 0.7;
     s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00";
     const a = analyze(s, s.plans[0]);
+    assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
+
+    const { prepared, recommendation } = a;
 
     const successes =
       a.durations.filter((ds) => {
-        const t = forward(a.prepared!, a.recommendation!, ds);
+        const t = forward(prepared, recommendation, ds);
 
-        return t.arrival <= a.prepared!.deadline + 0.01 && t.missedCutoffs.length === 0;
+        return t.arrival <= prepared.deadline + 0.01 && t.missedCutoffs.length === 0;
       }).length / a.durations.length;
 
     expect(successes).toBeGreaterThanOrEqual(s.confidence);
@@ -448,7 +464,13 @@ describe("version 2 migration", () => {
   it("loads a legacy v1 file with independent defaults and no checkpoints", () => {
     const s = airportDemo();
     delete s.linkedDelays;
-    s.plans.forEach((p) => p.steps.forEach((step) => delete step.finishByLocal));
+
+    for (const p of s.plans) {
+      for (const step of p.steps) {
+        delete step.finishByLocal;
+      }
+    }
+
     const original = analyze(s, s.plans[0]).samples;
 
     const loaded = parseScenarioFile(
@@ -467,7 +489,7 @@ describe("version 2 migration", () => {
     s.linkedDelays = 0.6;
     s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00-07:00";
     const raw = exportScenario(s);
-    expect(JSON.parse(raw).version).toBe(2);
+    expect(JSON.parse(raw)).toMatchObject({ version: 2 });
     expect(parseScenarioFile(raw)).toEqual(s);
   });
   it("rejects invalid linkage, malformed checkpoint fields and nonexistent imported dates", () => {
@@ -475,12 +497,12 @@ describe("version 2 migration", () => {
 
     for (const invalid of [-1, 1.1, NaN]) {
       s.linkedDelays = invalid;
-      expect(() => validateScenario(s)).toThrow();
+      expect(() => validateScenario(s)).toThrow(/missing or unsupported/);
     }
 
     s.linkedDelays = 0;
     s.plans[0].steps[0].finishByLocal = "x".repeat(41);
-    expect(() => validateScenario(s)).toThrow();
+    expect(() => validateScenario(s)).toThrow(/finite/);
     s.plans[0].steps[0].finishByLocal = "2026-03-08T02:30";
     expect(() => parseScenarioFile(exportScenario(s))).toThrow(/does not exist/);
   });

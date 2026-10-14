@@ -180,7 +180,8 @@ export function forward(prepared: PreparedPlan, leave: number, durations: number
     let cutoff: number | null = null;
 
     if (s.kind === "transit") {
-      departure = s.schedule.find((t) => t >= current + s.boardingBuffer * MINUTE) ?? Infinity;
+      const readyAt = current + s.boardingBuffer * MINUTE;
+      departure = s.schedule.find((t) => t >= readyAt) ?? Infinity;
       cutoff = departure - s.boardingBuffer * MINUTE;
       current = departure;
     }
@@ -330,7 +331,7 @@ export function connectionRisks(
   analysis: Analysis,
   departure: number,
   rows: TimelineRow[],
-): { id: string; cutoff: number; miss: number; next: number | null }[] {
+): ConnectionRisk[] {
   if (!analysis.prepared) {
     return [];
   }
@@ -339,25 +340,24 @@ export function connectionRisks(
   const runs = analysis.durations.map((ds) => forward(p, departure, ds));
 
   return rows.flatMap((row, j) => {
-    if (row.cutoff === null || row.departure === null || !Number.isFinite(row.departure)) {
+    const { cutoff, departure: scheduledDeparture } = row;
+
+    if (cutoff === null || scheduledDeparture === null || !Number.isFinite(scheduledDeparture)) {
       return [];
     }
 
     return [
       {
         id: row.step.id,
-        cutoff: row.cutoff,
-        miss: runs.filter((r) => r.rows[j].ready > row.cutoff!).length / runs.length,
-        next: p.steps[j].schedule.find((t) => t > row.departure!) ?? null,
+        cutoff,
+        miss: runs.filter((r) => r.rows[j].ready > cutoff).length / runs.length,
+        next: p.steps[j].schedule.find((t) => t > scheduledDeparture) ?? null,
       },
     ];
   });
 }
 
-export function histogram(
-  samples: number[],
-  bins = 28,
-): { min: number; max: number; counts: number[] } | null {
+export function histogram(samples: number[], bins = 28): Histogram | null {
   const values = samples.filter(Number.isFinite);
 
   if (!values.length) {
@@ -369,13 +369,16 @@ export function histogram(
 
   const width = Math.max(max - min, MINUTE);
   const counts = Array.from({ length: bins }, () => 0);
-  values.forEach((v) => counts[Math.min(bins - 1, Math.floor(((v - min) / width) * bins))]++);
+
+  for (const v of values) {
+    counts[Math.min(bins - 1, Math.floor(((v - min) / width) * bins))]++;
+  }
 
   return { min, max: Math.max(max, min + MINUTE), counts };
 }
 
 /** Each checkpoint’s marginal failure rate; these rates overlap and are not additive. */
-export function checkpointRisks(analysis: Analysis, leave: number): { id: string; miss: number }[] {
+export function checkpointRisks(analysis: Analysis, leave: number): CheckpointRisk[] {
   if (!analysis.prepared || !analysis.durations.length) {
     return [];
   }
@@ -398,6 +401,24 @@ export function checkpointRisks(analysis: Analysis, leave: number): { id: string
 
   return steps.map((s) => ({
     id: s.id,
-    miss: counts.get(s.id)! / analysis.durations.length,
+    miss: (counts.get(s.id) ?? 0) / analysis.durations.length,
   }));
+}
+
+interface ConnectionRisk {
+  id: string;
+  cutoff: number;
+  miss: number;
+  next: number | null;
+}
+
+interface Histogram {
+  min: number;
+  max: number;
+  counts: number[];
+}
+
+interface CheckpointRisk {
+  id: string;
+  miss: number;
 }
