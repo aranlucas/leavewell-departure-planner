@@ -5,5 +5,11 @@
     "checkJs": true,
     "types": ["node"]
   },
-  "include": ["server.mjs", "tools/oxlint/*.mjs", "test/**/*.mjs"]
+  "include": [
+    "server.mjs",
+    "tools/oxlint/*.mjs",
+    "test/**/*.mjs",
+    "playwright.config.ts",
+    "test/e2e/**/*.e2e.ts"
+  ]
 }
