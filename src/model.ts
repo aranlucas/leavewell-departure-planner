@@ -62,12 +62,7 @@ export function newStep(kind: StepKind = "task"): Step {
 }
 
 export function isStepKind(value: string): value is StepKind {
-  return (
-    value === "walk" ||
-    value === "drive" ||
-    value === "transit" ||
-    value === "task"
-  );
+  return value === "walk" || value === "drive" || value === "transit" || value === "task";
 }
 
 export function isDisambiguation(value: string): value is Disambiguation {

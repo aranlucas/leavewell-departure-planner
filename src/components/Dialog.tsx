@@ -20,7 +20,9 @@ export default function Dialog({
     return () => {
       dialog?.close();
 
-      if (previous instanceof HTMLElement) {previous.focus();}
+      if (previous instanceof HTMLElement) {
+        previous.focus();
+      }
     };
   }, []);
 
@@ -34,17 +36,15 @@ export default function Dialog({
         onClose();
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget) {onClose();}
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
       }}
     >
       <div className="dialog-inner">
         <div className="section-heading">
           <h2>{title}</h2>
-          <button
-            className="icon-button"
-            aria-label="Close dialog"
-            onClick={onClose}
-          >
+          <button type="button" className="icon-button" aria-label="Close dialog" onClick={onClose}>
             <X size={20} />
           </button>
         </div>

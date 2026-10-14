@@ -1,1 +1,11 @@
-{"name":"Leavewell — departure planner","short_name":"Leavewell","description":"Work backward from your arrival deadline, with room to breathe.","start_url":"/","scope":"/","display":"standalone","background_color":"#f8f9f5","theme_color":"#1c4b45","icons":[{"src":"/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any"}]}
+{
+  "name": "Leavewell — departure planner",
+  "short_name": "Leavewell",
+  "description": "Work backward from your arrival deadline, with room to breathe.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8f9f5",
+  "theme_color": "#1c4b45",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

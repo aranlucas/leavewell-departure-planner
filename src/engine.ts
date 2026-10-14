@@ -74,13 +74,10 @@ export function random(seed: number): () => number {
   };
 }
 
-export function triangular(
-  min: number,
-  mode: number,
-  max: number,
-  u: number,
-): number {
-  if (min === max) {return min;}
+export function triangular(min: number, mode: number, max: number, u: number): number {
+  if (min === max) {
+    return min;
+  }
 
   const split = (mode - min) / (max - min);
 
@@ -92,18 +89,10 @@ export function triangular(
 export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
   validateScenario(scenario);
 
-  const arrival = parseTime(
-    scenario.arrivalLocal,
-    scenario.timeZone,
-    scenario.disambiguation,
-  );
+  const arrival = parseTime(scenario.arrivalLocal, scenario.timeZone, scenario.disambiguation);
 
   const earliest = scenario.earliestLocal
-    ? parseTime(
-        scenario.earliestLocal,
-        scenario.timeZone,
-        scenario.disambiguation,
-      )
+    ? parseTime(scenario.earliestLocal, scenario.timeZone, scenario.disambiguation)
     : null;
 
   const steps = plan.steps.map((step) => {
@@ -115,16 +104,13 @@ export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
         .map((x) => x.trim())
         .filter(Boolean);
 
-      if (!entries.length || entries.length > 200)
-        {throw new Error(`${step.label}: enter 1–200 dated departures.`);}
+      if (!entries.length || entries.length > 200) {
+        throw new Error(`${step.label}: enter 1–200 dated departures.`);
+      }
 
       try {
         schedule = [
-          ...new Set(
-            entries.map((t) =>
-              parseTime(t, scenario.timeZone, scenario.disambiguation),
-            ),
-          ),
+          ...new Set(entries.map((t) => parseTime(t, scenario.timeZone, scenario.disambiguation))),
         ].sort((a, b) => a - b);
       } catch (error) {
         throw new Error(`${step.label}: ${errorMessage(error)}`, { cause: error });
@@ -135,11 +121,7 @@ export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
 
     if (step.finishByLocal) {
       try {
-        finishBy = parseTime(
-          step.finishByLocal,
-          scenario.timeZone,
-          scenario.disambiguation,
-        );
+        finishBy = parseTime(step.finishByLocal, scenario.timeZone, scenario.disambiguation);
       } catch (error) {
         throw new Error(`${step.label} finish-by: ${errorMessage(error)}`, { cause: error });
       }
@@ -163,20 +145,21 @@ export function backward(prepared: PreparedPlan, durations: number[]): number {
   for (let j = prepared.steps.length - 1; j >= 0; j--) {
     const s = prepared.steps[j];
     // The checkpoint bounds completion; the fixed buffer happens afterward.
-    latest =
-      Math.min(latest - s.buffer * MINUTE, s.finishBy ?? Infinity) -
-      durations[j] * MINUTE;
+    latest = Math.min(latest - s.buffer * MINUTE, s.finishBy ?? Infinity) - durations[j] * MINUTE;
 
     if (s.kind === "transit") {
       let departure = -Infinity;
 
-      for (let k = s.schedule.length - 1; k >= 0; k--)
-        {if (s.schedule[k] <= latest) {
+      for (let k = s.schedule.length - 1; k >= 0; k--) {
+        if (s.schedule[k] <= latest) {
           departure = s.schedule[k];
           break;
-        }}
+        }
+      }
 
-      if (!Number.isFinite(departure)) {return -Infinity;}
+      if (!Number.isFinite(departure)) {
+        return -Infinity;
+      }
 
       latest = departure - s.boardingBuffer * MINUTE;
     }
@@ -185,11 +168,7 @@ export function backward(prepared: PreparedPlan, durations: number[]): number {
   return latest;
 }
 
-export function forward(
-  prepared: PreparedPlan,
-  leave: number,
-  durations: number[],
-): ForwardResult {
+export function forward(prepared: PreparedPlan, leave: number, durations: number[]): ForwardResult {
   let current = leave;
   const rows: TimelineRow[] = [];
   const missedCutoffs: string[] = [];
@@ -201,9 +180,7 @@ export function forward(
     let cutoff: number | null = null;
 
     if (s.kind === "transit") {
-      departure =
-        s.schedule.find((t) => t >= current + s.boardingBuffer * MINUTE) ??
-        Infinity;
+      departure = s.schedule.find((t) => t >= current + s.boardingBuffer * MINUTE) ?? Infinity;
       cutoff = departure - s.boardingBuffer * MINUTE;
       current = departure;
     }
@@ -213,8 +190,9 @@ export function forward(
     current = completed + s.buffer * MINUTE;
 
     // Allow only sub-millisecond floating-point roundoff at inclusive equality.
-    if (s.finishBy !== null && completed > s.finishBy + 0.01)
-      {missedCutoffs.push(s.id);}
+    if (s.finishBy !== null && completed > s.finishBy + 0.01) {
+      missedCutoffs.push(s.id);
+    }
 
     rows.push({
       step: s,
@@ -233,11 +211,10 @@ export function forward(
 }
 
 /** Inclusive lower-tail order statistic: at least ceil(p*n) sampled latest times >= d. */
-export function departureQuantile(
-  samples: number[],
-  confidence: number,
-): number | null {
-  if (!samples.length) {return null;}
+export function departureQuantile(samples: number[], confidence: number): number | null {
+  if (!samples.length) {
+    return null;
+  }
 
   const sorted = [...samples].sort((a, b) => a - b);
   const index = samples.length - Math.ceil(confidence * samples.length);
@@ -246,20 +223,13 @@ export function departureQuantile(
   return Number.isFinite(value) ? Math.floor(value / MINUTE) * MINUTE : null;
 }
 
-export function coverageAt(
-  samples: number[],
-  departure: number | null,
-): number {
+export function coverageAt(samples: number[], departure: number | null): number {
   return departure === null || !Number.isFinite(departure)
     ? 0
     : samples.filter((t) => t >= departure).length / samples.length;
 }
 
-export function analyze(
-  scenario: Scenario,
-  plan: Plan,
-  count = SAMPLE_COUNT,
-): Analysis {
+export function analyze(scenario: Scenario, plan: Plan, count = SAMPLE_COUNT): Analysis {
   const base: Analysis = {
     planId: plan.id,
     error: null,
@@ -306,9 +276,7 @@ export function analyze(
     );
 
     const earliestCoverage =
-      prepared.earliest === null
-        ? null
-        : coverageAt(samples, prepared.earliest);
+      prepared.earliest === null ? null : coverageAt(samples, prepared.earliest);
 
     const sensitivities = prepared.steps
       .map((step, j) => {
@@ -329,10 +297,7 @@ export function analyze(
           minutes:
             recommendation === null || fixedDeparture === null
               ? 0
-              : Math.max(
-                  0,
-                  Math.round((fixedDeparture - recommendation) / MINUTE),
-                ),
+              : Math.max(0, Math.round((fixedDeparture - recommendation) / MINUTE)),
         };
       })
       .sort((a, b) => b.minutes - a.minutes || b.range - a.range);
@@ -342,16 +307,13 @@ export function analyze(
       prepared,
       recommendation,
       typical: Number.isFinite(typical) ? typical : null,
-      bounded: Number.isFinite(bounded)
-        ? Math.floor(bounded / MINUTE) * MINUTE
-        : null,
+      bounded: Number.isFinite(bounded) ? Math.floor(bounded / MINUTE) * MINUTE : null,
       samples,
       durations,
       sensitivities,
       coverage: coverageAt(samples, recommendation),
       earliestCoverage,
-      impossibleFraction:
-        samples.filter((t) => !Number.isFinite(t)).length / count,
+      impossibleFraction: samples.filter((t) => !Number.isFinite(t)).length / count,
       status:
         recommendation === null
           ? "impossible"
@@ -369,26 +331,23 @@ export function connectionRisks(
   departure: number,
   rows: TimelineRow[],
 ): { id: string; cutoff: number; miss: number; next: number | null }[] {
-  if (!analysis.prepared) {return [];}
+  if (!analysis.prepared) {
+    return [];
+  }
 
   const p = analysis.prepared;
   const runs = analysis.durations.map((ds) => forward(p, departure, ds));
 
   return rows.flatMap((row, j) => {
-    if (
-      row.cutoff === null ||
-      row.departure === null ||
-      !Number.isFinite(row.departure)
-    )
-      {return [];}
+    if (row.cutoff === null || row.departure === null || !Number.isFinite(row.departure)) {
+      return [];
+    }
 
     return [
       {
         id: row.step.id,
         cutoff: row.cutoff,
-        miss:
-          runs.filter((r) => r.rows[j].ready > row.cutoff!).length /
-          runs.length,
+        miss: runs.filter((r) => r.rows[j].ready > row.cutoff!).length / runs.length,
         next: p.steps[j].schedule.find((t) => t > row.departure!) ?? null,
       },
     ];
@@ -401,38 +360,40 @@ export function histogram(
 ): { min: number; max: number; counts: number[] } | null {
   const values = samples.filter(Number.isFinite);
 
-  if (!values.length) {return null;}
+  if (!values.length) {
+    return null;
+  }
 
   const min = Math.min(...values);
-    const max = Math.max(...values);
+  const max = Math.max(...values);
 
   const width = Math.max(max - min, MINUTE);
   const counts = Array.from({ length: bins }, () => 0);
-  values.forEach(
-    (v) => counts[Math.min(bins - 1, Math.floor(((v - min) / width) * bins))]++,
-  );
+  values.forEach((v) => counts[Math.min(bins - 1, Math.floor(((v - min) / width) * bins))]++);
 
   return { min, max: Math.max(max, min + MINUTE), counts };
 }
 
 /** Each checkpoint’s marginal failure rate; these rates overlap and are not additive. */
-export function checkpointRisks(
-  analysis: Analysis,
-  leave: number,
-): { id: string; miss: number }[] {
-  if (!analysis.prepared || !analysis.durations.length) {return [];}
+export function checkpointRisks(analysis: Analysis, leave: number): { id: string; miss: number }[] {
+  if (!analysis.prepared || !analysis.durations.length) {
+    return [];
+  }
 
   const steps = analysis.prepared.steps.filter((s) => s.finishBy !== null);
 
-  if (!steps.length) {return [];}
+  if (!steps.length) {
+    return [];
+  }
 
   const counts = new Map(steps.map((s) => [s.id, 0]));
 
   for (const durations of analysis.durations) {
     const trip = forward(analysis.prepared, leave, durations);
 
-    for (const id of trip.missedCutoffs)
-      {counts.set(id, (counts.get(id) ?? 0) + 1);}
+    for (const id of trip.missedCutoffs) {
+      counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
   }
 
   return steps.map((s) => ({
