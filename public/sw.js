@@ -32,6 +32,7 @@ worker.addEventListener("activate", (event) => {
     (async () => {
       for (const name of await caches.keys()) {
         if (name.startsWith("leavewell-shell-") && name !== CACHE) {
+          // oxlint-disable-next-line eslint/no-await-in-loop -- Bound cache deletion I/O and finish old-cache cleanup before claiming clients.
           await caches.delete(name);
         }
       }

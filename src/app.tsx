@@ -63,6 +63,7 @@ export default function App() {
     }
 
     try {
+      // oxlint-disable-next-line react/set-state-in-effect -- Report the synchronous localStorage write result; storage I/O must stay outside render.
       setPersisted(persistWorkspace(scenario, saved));
       setStorageWarning("");
     } catch {

@@ -111,6 +111,7 @@ export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
       try {
         schedule = [
           ...new Set(entries.map((t) => parseTime(t, scenario.timeZone, scenario.disambiguation))),
+          // oxlint-disable-next-line unicorn/no-array-sort -- Sort only a fresh or copied array; preserve the existing ES2022 browser target.
         ].sort((a, b) => a - b);
       } catch (error) {
         throw new Error(`${step.label}: ${errorMessage(error)}`, { cause: error });
@@ -217,6 +218,7 @@ export function departureQuantile(samples: number[], confidence: number): number
     return null;
   }
 
+  // oxlint-disable-next-line unicorn/no-array-sort -- Sort only a fresh or copied array; preserve the existing ES2022 browser target.
   const sorted = [...samples].sort((a, b) => a - b);
   const index = samples.length - Math.ceil(confidence * samples.length);
   const value = sorted[Math.max(0, index)];
@@ -301,6 +303,7 @@ export function analyze(scenario: Scenario, plan: Plan, count = SAMPLE_COUNT): A
               : Math.max(0, Math.round((fixedDeparture - recommendation) / MINUTE)),
         };
       })
+      // oxlint-disable-next-line unicorn/no-array-sort -- Sort only a fresh or copied array; preserve the existing ES2022 browser target.
       .sort((a, b) => b.minutes - a.minutes || b.range - a.range);
 
     return {
