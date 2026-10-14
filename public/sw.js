@@ -1,7 +1,10 @@
 /* Versioned offline shell. No scenario inputs leave the browser. */
+// This classic-script entry point runs only in the service worker global.
+const worker = /** @type {ServiceWorkerGlobalScope} */ (/** @type {unknown} */ (self));
+
 const CACHE = "leavewell-shell-v1";
 
-self.addEventListener("install", (event) => {
+worker.addEventListener("install", (event) => {
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE);
@@ -19,29 +22,30 @@ self.addEventListener("install", (event) => {
 
       await cache.put("/", response);
       await cache.addAll([...new Set([...assets, "/icon.svg", "/manifest.webmanifest"])]);
-      await self.skipWaiting();
+      await worker.skipWaiting();
     })(),
   );
 });
 
-self.addEventListener("activate", (event) => {
+worker.addEventListener("activate", (event) => {
   event.waitUntil(
     (async () => {
       for (const name of await caches.keys()) {
         if (name.startsWith("leavewell-shell-") && name !== CACHE) {
+          // oxlint-disable-next-line eslint/no-await-in-loop -- Bound cache deletion I/O and finish old-cache cleanup before claiming clients.
           await caches.delete(name);
         }
       }
 
-      await self.clients.claim();
+      await worker.clients.claim();
     })(),
   );
 });
 
-self.addEventListener("fetch", (event) => {
+worker.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  if (event.request.method !== "GET" || url.origin !== self.location.origin) {
+  if (event.request.method !== "GET" || url.origin !== worker.location.origin) {
     return;
   }
 
@@ -59,12 +63,12 @@ self.addEventListener("fetch", (event) => {
         }
 
         return (
-          (await caches.match("/")) ||
+          (await caches.match("/")) ??
           new Response("Open Leavewell online once to make it available offline.", { status: 503 })
         );
       })(),
     );
   } else {
-    event.respondWith((async () => (await caches.match(event.request)) || fetch(event.request))());
+    event.respondWith((async () => (await caches.match(event.request)) ?? fetch(event.request))());
   }
 });

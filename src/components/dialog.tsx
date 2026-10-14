@@ -2,15 +2,7 @@ import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { X } from "lucide-react";
 
-export default function Dialog({
-  title,
-  onClose,
-  children,
-}: {
-  title: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
+export default function Dialog({ title, onClose, children }: DialogProps) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const previous = document.activeElement;
@@ -35,6 +27,12 @@ export default function Dialog({
         e.preventDefault();
         onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          onClose();
+        }
+      }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose();
@@ -53,3 +51,9 @@ export default function Dialog({
     </dialog>
   );
 }
+
+type DialogProps = {
+  title: string;
+  onClose: () => void;
+  children: ReactNode;
+};

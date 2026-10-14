@@ -20,11 +20,11 @@ import type { Plan, Scenario } from "./model";
 import { persistWorkspace, readWorkspace } from "./storage";
 import { exportScenario, parseScenarioFile } from "./validation";
 import { MINUTE, timeLabel } from "./time";
-import { Field, NumberField } from "./components/Field";
-import StepEditor from "./components/StepEditor";
-import Timeline from "./components/Timeline";
-import Result from "./components/Result";
-import Dialog from "./components/Dialog";
+import { Field, NumberField } from "./components/field";
+import StepEditor from "./components/step-editor";
+import Timeline from "./components/timeline";
+import Result from "./components/result";
+import Dialog from "./components/dialog";
 
 export default function App() {
   const [initial] = useState(readWorkspace);
@@ -43,8 +43,17 @@ export default function App() {
 
   const analyses = useMemo(() => scenario.plans.map((p) => analyze(scenario, p)), [scenario]);
 
-  const active = scenario.plans.find((p) => p.id === scenario.activePlanId)!;
-  const analysis = analyses.find((p) => p.planId === active.id)!;
+  const active = scenario.plans.find((p) => p.id === scenario.activePlanId);
+
+  if (!active) {
+    throw new Error("The selected plan is missing.");
+  }
+
+  const analysis = analyses.find((p) => p.planId === active.id);
+
+  if (!analysis) {
+    throw new Error("The selected plan analysis is missing.");
+  }
 
   const leave = analysis.recommendation === null ? null : analysis.recommendation + offset * MINUTE;
 
@@ -54,6 +63,7 @@ export default function App() {
     }
 
     try {
+      // oxlint-disable-next-line react/set-state-in-effect -- Report the synchronous localStorage write result; storage I/O must stay outside render.
       setPersisted(persistWorkspace(scenario, saved));
       setStorageWarning("");
     } catch {
@@ -74,7 +84,9 @@ export default function App() {
     window.addEventListener("offline-cache-error", cacheFailure);
 
     if (import.meta.env.PROD && "serviceWorker" in navigator) {
-      navigator.serviceWorker.ready.then(() => setOfflineReady(true));
+      navigator.serviceWorker.ready
+        .then(() => setOfflineReady(true))
+        .catch(() => setOfflineReady(false));
     }
 
     return () => {
@@ -83,7 +95,7 @@ export default function App() {
       window.removeEventListener("offline-cache-error", cacheFailure);
     };
   }, []);
-  useEffect(() => {
+  useEffect((): void | (() => void) => {
     if (!notice) {
       return;
     }
@@ -92,6 +104,28 @@ export default function App() {
 
     return () => clearTimeout(timer);
   }, [notice]);
+
+  async function importFile(input: HTMLInputElement) {
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      if (file.size > 500000) {
+        throw new Error("Choose a scenario file under 500 KB.");
+      }
+
+      const imported = parseScenarioFile(await file.text());
+      load({ ...imported, id: uid() });
+      setNotice("Scenario imported. Save it to keep a named copy on this device.");
+    } catch (error) {
+      setNotice(errorMessage(error));
+    } finally {
+      input.value = "";
+    }
+  }
 
   const update = (patch: Partial<Scenario>) => {
     setScenario((s) => ({ ...s, ...patch }));
@@ -468,12 +502,14 @@ export default function App() {
                     type="button"
                     className="icon-button danger"
                     aria-label="Remove selected plan"
-                    onClick={() =>
-                      update({
-                        plans: scenario.plans.filter((p) => p.id !== active.id),
-                        activePlanId: scenario.plans.find((p) => p.id !== active.id)!.id,
-                      })
-                    }
+                    onClick={() => {
+                      const remaining = scenario.plans.filter((p) => p.id !== active.id);
+                      const next = remaining[0];
+
+                      if (next) {
+                        update({ plans: remaining, activePlanId: next.id });
+                      }
+                    }}
                   >
                     <Trash2 size={17} />
                   </button>
@@ -614,26 +650,8 @@ export default function App() {
         accept=".json,application/json"
         aria-label="Import scenario file"
         className="sr-only"
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-
-          if (!file) {
-            return;
-          }
-
-          try {
-            if (file.size > 500000) {
-              throw new Error("Choose a scenario file under 500 KB.");
-            }
-
-            const imported = parseScenarioFile(await file.text());
-            load({ ...imported, id: uid() });
-            setNotice("Scenario imported. Save it to keep a named copy on this device.");
-          } catch (error) {
-            setNotice(errorMessage(error));
-          } finally {
-            e.target.value = "";
-          }
+        onChange={(e) => {
+          importFile(e.currentTarget).catch((error) => setNotice(errorMessage(error)));
         }}
       />
       {library && (

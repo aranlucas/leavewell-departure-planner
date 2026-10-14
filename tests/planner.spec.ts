@@ -20,7 +20,7 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId("recommendation")).not.toHaveText("—");
 });
 
-test.afterEach(async ({ page }) => expect(errors.get(page)).toEqual([]));
+test.afterEach(({ page }) => expect(errors.get(page)).toEqual([]));
 
 async function expandSettings(page: Page) {
   await page.getByText("Time settings & assumptions", { exact: true }).click();
@@ -310,7 +310,13 @@ test("checkpoint DST errors recover and legacy files migrate with unchanged depa
   await expect(page.getByRole("alert")).toHaveCount(0);
   const legacy = airportDemo();
   delete legacy.linkedDelays;
-  legacy.plans.forEach((p) => p.steps.forEach((s) => delete s.finishByLocal));
+
+  for (const p of legacy.plans) {
+    for (const savedStep of p.steps) {
+      delete savedStep.finishByLocal;
+    }
+  }
+
   await page.getByLabel("Import scenario file", { exact: true }).setInputFiles({
     name: "old-v1.json",
     mimeType: "application/json",
@@ -358,7 +364,13 @@ test("existing device workspace migrates without losing named scenarios or chang
   const legacy = airportDemo();
   legacy.name = "Legacy saved trip";
   delete legacy.linkedDelays;
-  legacy.plans.forEach((p) => p.steps.forEach((s) => delete s.finishByLocal));
+
+  for (const p of legacy.plans) {
+    for (const savedStep of p.steps) {
+      delete savedStep.finishByLocal;
+    }
+  }
+
   await page.evaluate(
     (scenario) =>
       localStorage.setItem("leavewell.v1", JSON.stringify({ draft: scenario, saved: [scenario] })),

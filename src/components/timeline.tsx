@@ -3,17 +3,9 @@ import type { Analysis } from "../engine";
 import { checkpointRisks, connectionRisks, forward } from "../engine";
 import { localDate, timeLabel } from "../time";
 import type { Scenario } from "../model";
-import { icons } from "./StepEditor";
+import { icons } from "../step-kinds";
 
-export default function Timeline({
-  analysis,
-  scenario,
-  leave,
-}: {
-  analysis: Analysis;
-  scenario: Scenario;
-  leave: number | null;
-}) {
+export default function Timeline({ analysis, scenario, leave }: TimelineProps) {
   if (!analysis.prepared || leave === null) {
     return null;
   }
@@ -146,3 +138,9 @@ export default function Timeline({
     </section>
   );
 }
+
+type TimelineProps = {
+  analysis: Analysis;
+  scenario: Scenario;
+  leave: number | null;
+};

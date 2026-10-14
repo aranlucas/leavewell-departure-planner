@@ -20,18 +20,28 @@ export function readWorkspace(): Workspace {
       return fallback;
     }
 
-    const data = JSON.parse(raw);
+    const data: unknown = JSON.parse(raw);
+
+    if (!data || typeof data !== "object" || !("draft" in data) || !("saved" in data)) {
+      throw new Error("Invalid workspace");
+    }
+
     validateScenario(data.draft);
 
     if (!Array.isArray(data.saved) || data.saved.length > 20) {
       throw new Error("Invalid saved list");
     }
 
-    data.saved.forEach(validateScenario);
+    const saved: Scenario[] = [];
+
+    for (const candidate of data.saved) {
+      validateScenario(candidate);
+      saved.push(normalizeScenario(candidate));
+    }
 
     return {
       draft: normalizeScenario(data.draft),
-      saved: data.saved.map(normalizeScenario),
+      saved,
       warning: "",
     };
   } catch {
