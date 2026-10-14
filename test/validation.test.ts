@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { airportDemo } from "./demo";
+import { airportDemo } from "@/demo";
 import {
   exportScenario,
   normalizeScenario,
   parseScenarioFile,
   validateScenario,
-} from "./validation";
+} from "@/validation";
 
 const example = airportDemo();
 

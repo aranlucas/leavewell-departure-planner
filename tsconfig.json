@@ -12,7 +12,11 @@
     "allowImportingTsExtensions": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@test/*": ["./test/*"]
+    }
   },
-  "include": ["src", "vite.config.ts", "playwright.config.ts", "tests"]
+  "include": ["src", "vite.config.ts", "playwright.config.ts", "test"]
 }

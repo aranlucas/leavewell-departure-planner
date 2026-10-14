@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
-import { airportDemo } from "../src/demo";
-import { exportScenario } from "../src/validation";
+import { airportDemo } from "@/demo";
+import { exportScenario } from "@/validation";
 import type { Page } from "@playwright/test";
 
 const errors = new WeakMap<Page, string[]>();
