@@ -83,15 +83,17 @@ http
           "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; worker-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'",
       });
 
-      if (req.method === "HEAD") {res.end();}
-      else {createReadStream(path).pipe(res);}
+      if (req.method === "HEAD") {
+        res.end();
+      } else {
+        createReadStream(path).pipe(res);
+      }
     } catch {
       res.writeHead(404);
       res.end("Not found");
     }
   })
-  .listen(
-    Number(process.env.PORT) || 4310,
-    process.env.HOST || "127.0.0.1",
-    () => console.log("Leavewell is ready."),
-  );
+  .listen(Number(process.env.PORT) || 4310, process.env.HOST || "127.0.0.1", () => {
+    // oxlint-disable-next-line no-console -- The local preview server signals readiness to the operator.
+    console.log("Leavewell is ready.");
+  });

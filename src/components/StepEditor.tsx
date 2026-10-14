@@ -49,6 +49,7 @@ export default function StepEditor({
   return (
     <div className={`step-editor ${open ? "expanded" : ""}`}>
       <button
+        type="button"
         className="step-toggle"
         aria-expanded={open}
         aria-controls={`editor-${step.id}`}
@@ -92,7 +93,9 @@ export default function StepEditor({
                 onChange={(e) => {
                   const value = e.target.value;
 
-                  if (isStepKind(value)) {update({ kind: value });}
+                  if (isStepKind(value)) {
+                    update({ kind: value });
+                  }
                 }}
               >
                 {Object.entries(kindNames).map(([k, v]) => (
@@ -104,25 +107,13 @@ export default function StepEditor({
             </Field>
           </div>
           <div className="three-fields">
-            <NumberField
-              label="Fastest"
-              value={step.min}
-              onChange={(min) => update({ min })}
-            />
-            <NumberField
-              label="Typical"
-              value={step.mode}
-              onChange={(mode) => update({ mode })}
-            />
-            <NumberField
-              label="Slowest"
-              value={step.max}
-              onChange={(max) => update({ max })}
-            />
+            <NumberField label="Fastest" value={step.min} onChange={(min) => update({ min })} />
+            <NumberField label="Typical" value={step.mode} onChange={(mode) => update({ mode })} />
+            <NumberField label="Slowest" value={step.max} onChange={(max) => update({ max })} />
           </div>
           <p className="field-note">
-            Typical is the most likely duration. Fastest ≤ typical ≤ slowest;
-            the model samples between these bounds.
+            Typical is the most likely duration. Fastest ≤ typical ≤ slowest; the model samples
+            between these bounds.
           </p>
           <div className="two-fields">
             <NumberField
@@ -173,6 +164,7 @@ export default function StepEditor({
               Step {index + 1} of {total}
             </span>
             <button
+              type="button"
               className="icon-button"
               aria-label={`Move ${step.label} up`}
               disabled={index === 0}
@@ -181,6 +173,7 @@ export default function StepEditor({
               <ArrowUp size={17} />
             </button>
             <button
+              type="button"
               className="icon-button"
               aria-label={`Move ${step.label} down`}
               disabled={index === total - 1}
@@ -189,6 +182,7 @@ export default function StepEditor({
               <ArrowDown size={17} />
             </button>
             <button
+              type="button"
               className="text-button danger"
               disabled={total === 1}
               onClick={onDelete}

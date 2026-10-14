@@ -1,4 +1,4 @@
-import { errorMessage, isDisambiguation,newStep,uid } from "./model";
+import { errorMessage, isDisambiguation, newStep, uid } from "./model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -41,21 +41,17 @@ export default function App() {
   const [offlineReady, setOfflineReady] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const analyses = useMemo(
-    () => scenario.plans.map((p) => analyze(scenario, p)),
-    [scenario],
-  );
+  const analyses = useMemo(() => scenario.plans.map((p) => analyze(scenario, p)), [scenario]);
 
   const active = scenario.plans.find((p) => p.id === scenario.activePlanId)!;
   const analysis = analyses.find((p) => p.planId === active.id)!;
 
-  const leave =
-    analysis.recommendation === null
-      ? null
-      : analysis.recommendation + offset * MINUTE;
+  const leave = analysis.recommendation === null ? null : analysis.recommendation + offset * MINUTE;
 
   useEffect(() => {
-    if (pauseSaving) {return;}
+    if (pauseSaving) {
+      return;
+    }
 
     try {
       setPersisted(persistWorkspace(scenario, saved));
@@ -71,16 +67,15 @@ export default function App() {
     const change = () => setOffline(!navigator.onLine);
 
     const cacheFailure = () =>
-      setNotice(
-        "Offline caching failed. Keep this tab open, or reload online to retry.",
-      );
+      setNotice("Offline caching failed. Keep this tab open, or reload online to retry.");
 
     window.addEventListener("online", change);
     window.addEventListener("offline", change);
     window.addEventListener("offline-cache-error", cacheFailure);
 
-    if (import.meta.env.PROD && "serviceWorker" in navigator)
-      {navigator.serviceWorker.ready.then(() => setOfflineReady(true));}
+    if (import.meta.env.PROD && "serviceWorker" in navigator) {
+      navigator.serviceWorker.ready.then(() => setOfflineReady(true));
+    }
 
     return () => {
       window.removeEventListener("online", change);
@@ -89,7 +84,9 @@ export default function App() {
     };
   }, []);
   useEffect(() => {
-    if (!notice) {return;}
+    if (!notice) {
+      return;
+    }
 
     const timer = setTimeout(() => setNotice(""), 8000);
 
@@ -115,20 +112,15 @@ export default function App() {
     try {
       exportScenario(scenario);
 
-      if (analyses.some((a) => a.error))
-        {throw new Error(
-          "Resolve the highlighted model inputs before saving a named scenario.",
-        );}
+      if (analyses.some((a) => a.error)) {
+        throw new Error("Resolve the highlighted model inputs before saving a named scenario.");
+      }
 
-      if (saved.length >= 20 && !saved.some((s) => s.id === scenario.id))
-        {throw new Error(
-          "You have 20 saved scenarios. Export or remove one before saving another.",
-        );}
+      if (saved.length >= 20 && !saved.some((s) => s.id === scenario.id)) {
+        throw new Error("You have 20 saved scenarios. Export or remove one before saving another.");
+      }
 
-      const next = [
-        ...saved.filter((s) => s.id !== scenario.id),
-        structuredClone(scenario),
-      ];
+      const next = [...saved.filter((s) => s.id !== scenario.id), structuredClone(scenario)];
 
       setSaved(next);
 
@@ -151,14 +143,11 @@ export default function App() {
     try {
       const raw = exportScenario(scenario);
 
-      if (analyses.some((a) => a.error))
-        {throw new Error(
-          "Resolve the model input errors before exporting a portable scenario.",
-        );}
+      if (analyses.some((a) => a.error)) {
+        throw new Error("Resolve the model input errors before exporting a portable scenario.");
+      }
 
-      const url = URL.createObjectURL(
-        new Blob([raw], { type: "application/json" }),
-      );
+      const url = URL.createObjectURL(new Blob([raw], { type: "application/json" }));
 
       const a = document.createElement("a");
       a.href = url;
@@ -170,9 +159,7 @@ export default function App() {
       }.json`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setNotice(
-        "Portable scenario exported. It includes your inputs, not personal location data.",
-      );
+      setNotice("Portable scenario exported. It includes your inputs, not personal location data.");
     } catch (error) {
       setNotice(errorMessage(error));
     }
@@ -191,10 +178,7 @@ export default function App() {
 
   const move = (index: number, direction: number) => {
     const steps = [...active.steps];
-    [steps[index], steps[index + direction]] = [
-      steps[index + direction],
-      steps[index],
-    ];
+    [steps[index], steps[index + direction]] = [steps[index + direction], steps[index]];
     updatePlan({ ...active, steps });
   };
 
@@ -211,11 +195,11 @@ export default function App() {
           leavewell<span className="brand-dot">.</span>
         </a>
         <nav aria-label="Workspace">
-          <button className="text-button" onClick={() => setLibrary(true)}>
+          <button type="button" className="text-button" onClick={() => setLibrary(true)}>
             <BookOpen size={17} />
             <span>Scenarios</span>
           </button>
-          <button className="button export-button" onClick={download}>
+          <button type="button" className="button export-button" onClick={download}>
             <Download size={16} />
             Export<span className="desktop-word"> scenario</span>
           </button>
@@ -242,9 +226,7 @@ export default function App() {
             <span className="sketch-end">
               <ArrowRight size={20} />
             </span>
-            <span className="sketch-label">
-              a little margin goes a long way
-            </span>
+            <span className="sketch-label">a little margin goes a long way</span>
           </div>
         </div>
         <div className="workspace-heading">
@@ -266,7 +248,7 @@ export default function App() {
                   : "Complete fields to save draft"}
             </span>
           </div>
-          <button className="button save-button" onClick={save}>
+          <button type="button" className="button save-button" onClick={save}>
             <Save size={16} />
             Save scenario
           </button>
@@ -275,6 +257,7 @@ export default function App() {
           <div className="warning-banner" role="alert">
             <div>{storageWarning}</div>
             <button
+              type="button"
               className="button"
               onClick={() => {
                 setPauseSaving(false);
@@ -283,9 +266,7 @@ export default function App() {
                   setPersisted(persistWorkspace(scenario, saved));
                   setStorageWarning("");
                 } catch {
-                  setNotice(
-                    "Device saving is still unavailable. Export a file for now.",
-                  );
+                  setNotice("Device saving is still unavailable. Export a file for now.");
                 }
               }}
             >
@@ -293,10 +274,7 @@ export default function App() {
             </button>
           </div>
         )}
-        <section
-          className="arrival-settings"
-          aria-label="Arrival and model settings"
-        >
+        <section className="arrival-settings" aria-label="Arrival and model settings">
           <div className="arrival-fields">
             <Field label="Hard arrival deadline">
               <input
@@ -331,8 +309,7 @@ export default function App() {
           </div>
           <div className="confidence-control">
             <label htmlFor="confidence">
-              Model coverage target{" "}
-              <strong>{Math.round(scenario.confidence * 100)}%</strong>
+              Model coverage target <strong>{Math.round(scenario.confidence * 100)}%</strong>
             </label>
             <input
               id="confidence"
@@ -341,9 +318,7 @@ export default function App() {
               max={100}
               step={1}
               value={Math.round(scenario.confidence * 100)}
-              onChange={(e) =>
-                update({ confidence: Number(e.target.value) / 100 })
-              }
+              onChange={(e) => update({ confidence: Number(e.target.value) / 100 })}
             />
             <div className="range-endpoints">
               <span>50% · less margin</span>
@@ -380,8 +355,9 @@ export default function App() {
                   onChange={(e) => {
                     const value = e.target.value;
 
-                    if (isDisambiguation(value))
-                      {update({ disambiguation: value });}
+                    if (isDisambiguation(value)) {
+                      update({ disambiguation: value });
+                    }
                   }}
                 >
                   <option value="reject">Require an explicit choice</option>
@@ -393,9 +369,7 @@ export default function App() {
             <div className="confidence-control linked-control">
               <label htmlFor="linked-delays">
                 Linked-delay stress test{" "}
-                <strong>
-                  {Math.round((scenario.linkedDelays ?? 0) * 100)}%
-                </strong>
+                <strong>{Math.round((scenario.linkedDelays ?? 0) * 100)}%</strong>
               </label>
               <input
                 id="linked-delays"
@@ -404,19 +378,16 @@ export default function App() {
                 max={100}
                 step={10}
                 value={Math.round((scenario.linkedDelays ?? 0) * 100)}
-                onChange={(e) =>
-                  update({ linkedDelays: Number(e.target.value) / 100 })
-                }
+                onChange={(e) => update({ linkedDelays: Number(e.target.value) / 100 })}
               />
               <div className="range-endpoints">
                 <span>0% · independent</span>
                 <span>100% · move together</span>
               </div>
               <p className="field-note">
-                In this fraction of runs, all steps share the same duration
-                percentile. Other runs stay independent. Each step keeps its
-                original range and triangular distribution. This stress test is
-                an assumption, not a measured correlation.
+                In this fraction of runs, all steps share the same duration percentile. Other runs
+                stay independent. Each step keeps its original range and triangular distribution.
+                This stress test is an assumption, not a measured correlation.
               </p>
             </div>
             <Field
@@ -438,6 +409,7 @@ export default function App() {
               <div className="section-heading">
                 <h2>Choose your route</h2>
                 <button
+                  type="button"
                   className="text-button"
                   disabled={scenario.plans.length >= 5}
                   onClick={duplicate}
@@ -449,6 +421,7 @@ export default function App() {
               <div className="plan-options">
                 {scenario.plans.map((p, i) => (
                   <button
+                    type="button"
                     key={p.id}
                     className={`plan-option ${active.id === p.id ? "selected" : ""}`}
                     aria-pressed={active.id === p.id}
@@ -479,10 +452,7 @@ export default function App() {
               <div className="section-heading">
                 <div>
                   <h2 id="journey-title">Everything between here & there</h2>
-                  <p>
-                    Tap a step to edit durations, buffers, departures, or
-                    finish-by cutoffs.
-                  </p>
+                  <p>Tap a step to edit durations, buffers, departures, or finish-by cutoffs.</p>
                 </div>
               </div>
               <div className="plan-name-row">
@@ -490,21 +460,18 @@ export default function App() {
                   <input
                     maxLength={100}
                     value={active.name}
-                    onChange={(e) =>
-                      updatePlan({ ...active, name: e.target.value })
-                    }
+                    onChange={(e) => updatePlan({ ...active, name: e.target.value })}
                   />
                 </Field>
                 {scenario.plans.length > 1 && (
                   <button
+                    type="button"
                     className="icon-button danger"
                     aria-label="Remove selected plan"
                     onClick={() =>
                       update({
                         plans: scenario.plans.filter((p) => p.id !== active.id),
-                        activePlanId: scenario.plans.find(
-                          (p) => p.id !== active.id,
-                        )!.id,
+                        activePlanId: scenario.plans.find((p) => p.id !== active.id)!.id,
                       })
                     }
                   >
@@ -522,9 +489,7 @@ export default function App() {
                     onChange={(changed) =>
                       updatePlan({
                         ...active,
-                        steps: active.steps.map((s) =>
-                          s.id === changed.id ? changed : s,
-                        ),
+                        steps: active.steps.map((s) => (s.id === changed.id ? changed : s)),
                       })
                     }
                     onMove={(d) => move(i, d)}
@@ -541,6 +506,7 @@ export default function App() {
                 <span>Add a step</span>
                 {(["walk", "drive", "transit", "task"] as const).map((k) => (
                   <button
+                    type="button"
                     key={k}
                     className="button small-button"
                     disabled={active.steps.length >= 20}
@@ -567,29 +533,26 @@ export default function App() {
             <section className="method-note">
               <h2>A deadline is a chain, not a single trip.</h2>
               <p>
-                Every step can use up your margin. Leavewell works backward from
-                your hard deadline, subtracts buffers, and checks each listed
-                connection. Adjust an assumption and watch the departure move.
+                Every step can use up your margin. Leavewell works backward from your hard deadline,
+                subtracts buffers, and checks each listed connection. Adjust an assumption and watch
+                the departure move.
               </p>
               <details>
                 <summary>See the method & limits</summary>
                 <p>
-                  The same seeded 4,096 triangular draws are used on every
-                  calculation. The recommendation is a lower-tail quantile of
-                  the latest feasible departure: at least your chosen percentage
-                  of sample runs still work when leaving at that minute. A
-                  forward simulation verifies the timeline. Earlier trains are
-                  allowed; only entered departures exist. Sensitivity freezes
-                  one duration at its mode with the other samples unchanged.
+                  The same seeded 4,096 triangular draws are used on every calculation. The
+                  recommendation is a lower-tail quantile of the latest feasible departure: at least
+                  your chosen percentage of sample runs still work when leaving at that minute. A
+                  forward simulation verifies the timeline. Earlier trains are allowed; only entered
+                  departures exist. Sensitivity freezes one duration at its mode with the other
+                  samples unchanged.
                 </p>
                 <p>
-                  Finite samples have error and inputs are assumptions. Linked
-                  durations are a stress test, not a calibrated disruption
-                  forecast. Enter any actual check-in close time as a step
-                  finish-by cutoff. All steps share one time zone; elapsed
-                  travel remains correct across midnight and DST. No live
-                  transit, flight, traffic, security, or booking information is
-                  supplied.
+                  Finite samples have error and inputs are assumptions. Linked durations are a
+                  stress test, not a calibrated disruption forecast. Enter any actual check-in close
+                  time as a step finish-by cutoff. All steps share one time zone; elapsed travel
+                  remains correct across midnight and DST. No live transit, flight, traffic,
+                  security, or booking information is supplied.
                 </p>
                 <p>
                   <a
@@ -611,12 +574,7 @@ export default function App() {
               </details>
             </section>
           </div>
-          <Result
-            analysis={analysis}
-            scenario={scenario}
-            offset={offset}
-            setOffset={setOffset}
-          />
+          <Result analysis={analysis} scenario={scenario} offset={offset} setOffset={setOffset} />
         </div>
         <footer className="app-footer">
           <span>
@@ -636,7 +594,7 @@ export default function App() {
               </>
             )}
           </span>
-          <button className="text-button" onClick={() => setReset(true)}>
+          <button type="button" className="text-button" onClick={() => setReset(true)}>
             <RotateCcw size={14} />
             Reset draft to demo
           </button>
@@ -645,10 +603,7 @@ export default function App() {
       {notice && (
         <div className="toast" role="status">
           {notice}
-          <button
-            aria-label="Dismiss notification"
-            onClick={() => setNotice("")}
-          >
+          <button type="button" aria-label="Dismiss notification" onClick={() => setNotice("")}>
             ×
           </button>
         </div>
@@ -662,17 +617,18 @@ export default function App() {
         onChange={async (e) => {
           const file = e.target.files?.[0];
 
-          if (!file) {return;}
+          if (!file) {
+            return;
+          }
 
           try {
-            if (file.size > 500000)
-              {throw new Error("Choose a scenario file under 500 KB.");}
+            if (file.size > 500000) {
+              throw new Error("Choose a scenario file under 500 KB.");
+            }
 
             const imported = parseScenarioFile(await file.text());
             load({ ...imported, id: uid() });
-            setNotice(
-              "Scenario imported. Save it to keep a named copy on this device.",
-            );
+            setNotice("Scenario imported. Save it to keep a named copy on this device.");
           } catch (error) {
             setNotice(errorMessage(error));
           } finally {
@@ -683,10 +639,10 @@ export default function App() {
       {library && (
         <Dialog title="Your scenarios" onClose={() => setLibrary(false)}>
           <p className="dialog-description">
-            Saved here, on this device. Export a file to take a scenario with
-            you.
+            Saved here, on this device. Export a file to take a scenario with you.
           </p>
           <button
+            type="button"
             className="button import-button"
             onClick={() => fileInput.current?.click()}
           >
@@ -696,6 +652,7 @@ export default function App() {
           <div className="library-section">
             <h3>Start from a demo</h3>
             <button
+              type="button"
               className="library-row"
               onClick={() => load({ ...airportDemo(), id: uid() })}
             >
@@ -706,6 +663,7 @@ export default function App() {
               <ArrowRight size={18} />
             </button>
             <button
+              type="button"
               className="library-row"
               onClick={() => load({ ...appointmentDemo(), id: uid() })}
             >
@@ -722,30 +680,28 @@ export default function App() {
             </h3>
             {saved.length === 0 ? (
               <p className="empty-state">
-                Your first saved scenario will appear here. Edit the demo, then
-                select Save scenario.
+                Your first saved scenario will appear here. Edit the demo, then select Save
+                scenario.
               </p>
             ) : (
               saved.map((s) => (
                 <div key={s.id} className="saved-row">
-                  <button className="library-row" onClick={() => load(s)}>
+                  <button type="button" className="library-row" onClick={() => load(s)}>
                     <span>
                       <strong>{s.name}</strong>
                       <small>
-                        {s.arrivalLocal.replace("T", " · ")} · {s.plans.length}{" "}
-                        plans
+                        {s.arrivalLocal.replace("T", " · ")} · {s.plans.length} plans
                       </small>
                     </span>
                     <ArrowRight size={18} />
                   </button>
                   <button
+                    type="button"
                     className="icon-button danger"
                     aria-label={`Delete saved ${s.name}`}
                     onClick={() => {
                       setSaved(saved.filter((x) => x.id !== s.id));
-                      setNotice(
-                        "Saved copy removed. The current draft is unchanged.",
-                      );
+                      setNotice("Saved copy removed. The current draft is unchanged.");
                     }}
                   >
                     <Trash2 size={16} />
@@ -757,20 +713,17 @@ export default function App() {
         </Dialog>
       )}
       {reset && (
-        <Dialog
-          title="Reset the current draft?"
-          onClose={() => setReset(false)}
-        >
+        <Dialog title="Reset the current draft?" onClose={() => setReset(false)}>
           <p className="dialog-description">
-            This replaces the draft with the airport demo. Your named saved
-            scenarios stay available. Export first if you need a copy of unsaved
-            changes.
+            This replaces the draft with the airport demo. Your named saved scenarios stay
+            available. Export first if you need a copy of unsaved changes.
           </p>
           <div className="dialog-actions">
-            <button className="button" onClick={() => setReset(false)}>
+            <button type="button" className="button" onClick={() => setReset(false)}>
               Keep editing
             </button>
             <button
+              type="button"
               className="button primary"
               onClick={() => {
                 load(airportDemo());

@@ -14,7 +14,9 @@ export default function Timeline({
   scenario: Scenario;
   leave: number | null;
 }) {
-  if (!analysis.prepared || leave === null) {return null;}
+  if (!analysis.prepared || leave === null) {
+    return null;
+  }
 
   const p = analysis.prepared;
 
@@ -57,8 +59,7 @@ export default function Timeline({
                 <div className="timeline-row">
                   <strong>{row.step.label}</strong>
                   <span>
-                    {timeLabel(row.start, scenario.timeZone)}{" "}
-                    <ArrowRight size={12} />{" "}
+                    {timeLabel(row.start, scenario.timeZone)} <ArrowRight size={12} />{" "}
                     {timeLabel(row.end, scenario.timeZone)}
                   </span>
                 </div>
@@ -66,8 +67,7 @@ export default function Timeline({
                   {row.step.mode} min typical
                   {row.step.buffer ? ` + ${row.step.buffer} min buffer` : ""}
                   {Number.isFinite(row.start) &&
-                  localDate(row.start, scenario.timeZone) !==
-                    localDate(leave, scenario.timeZone)
+                  localDate(row.start, scenario.timeZone) !== localDate(leave, scenario.timeZone)
                     ? ` · ${localDate(row.start, scenario.timeZone)}`
                     : ""}
                 </div>
@@ -76,13 +76,12 @@ export default function Timeline({
                     <TrainFront size={15} />
                     <div>
                       <strong>
-                        Ready by {timeLabel(risk.cutoff, scenario.timeZone)} to
-                        catch {timeLabel(row.departure, scenario.timeZone)}
+                        Ready by {timeLabel(risk.cutoff, scenario.timeZone)} to catch{" "}
+                        {timeLabel(row.departure, scenario.timeZone)}
                       </strong>
                       <span>
                         {Math.round(row.wait)} min waiting / boarding ·{" "}
-                        {Math.round(risk.miss * 100)}% of model runs miss this
-                        cutoff
+                        {Math.round(risk.miss * 100)}% of model runs miss this cutoff
                         {risk.next
                           ? ` · next: ${timeLabel(risk.next, scenario.timeZone)}`
                           : " · no later departure listed"}
@@ -106,8 +105,7 @@ export default function Timeline({
                           : `Typical completion: ${timeLabel(row.completed, scenario.timeZone)}`}{" "}
                         ·{" "}
                         {Math.round(
-                          (checkpoints.find((c) => c.id === row.step.id)
-                            ?.miss ?? 0) * 100,
+                          (checkpoints.find((c) => c.id === row.step.id)?.miss ?? 0) * 100,
                         )}
                         % of model runs miss this cutoff
                       </span>

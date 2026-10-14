@@ -21,16 +21,13 @@ export function Field({
   const control = Children.toArray(children).find(isControl);
 
   const controlId =
-    (isValidElement<ControlProps>(control) ? control.props.id : undefined) ??
-    generatedId;
+    (isValidElement<ControlProps>(control) ? control.props.id : undefined) ?? generatedId;
 
   const hintId = `${generatedId}-hint`;
 
   const description =
     [
-      isValidElement<ControlProps>(control)
-        ? control.props["aria-describedby"]
-        : undefined,
+      isValidElement<ControlProps>(control) ? control.props["aria-describedby"] : undefined,
       hint ? hintId : null,
     ]
       .filter(Boolean)
@@ -77,9 +74,7 @@ export function NumberField({
           max={max}
           step="1"
           value={Number.isFinite(value) ? value : ""}
-          onChange={(e) =>
-            onChange(e.target.value === "" ? NaN : Number(e.target.value))
-          }
+          onChange={(e) => onChange(e.target.value === "" ? NaN : Number(e.target.value))}
           {...props}
         />
         <span aria-hidden="true">min</span>

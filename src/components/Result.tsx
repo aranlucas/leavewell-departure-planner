@@ -16,35 +16,22 @@ export default function Result({
   offset: number;
   setOffset: (n: number) => void;
 }) {
-  const leave =
-    analysis.recommendation === null
-      ? null
-      : analysis.recommendation + offset * MINUTE;
+  const leave = analysis.recommendation === null ? null : analysis.recommendation + offset * MINUTE;
 
   const coverage = coverageAt(analysis.samples, leave);
   const chart = useMemo(() => histogram(analysis.samples), [analysis.samples]);
   const dominant = analysis.sensitivities[0];
 
-  const maxSensitivity = Math.max(
-    1,
-    ...analysis.sensitivities.map((s) => s.minutes),
-  );
+  const maxSensitivity = Math.max(1, ...analysis.sensitivities.map((s) => s.minutes));
 
   const valid = analysis.status === "ready";
 
   return (
     <aside className="result-column" aria-label="Departure recommendation">
-      <section
-        className={`departure-card ${!valid ? "problem" : ""}`}
-        aria-live="polite"
-      >
+      <section className={`departure-card ${!valid ? "problem" : ""}`} aria-live="polite">
         <div className="recommendation-label">
           <ShieldCheck size={18} />
-          <span>
-            {valid
-              ? "Latest departure for your target"
-              : "Plan needs attention"}
-          </span>
+          <span>{valid ? "Latest departure for your target" : "Plan needs attention"}</span>
         </div>
         <div className="departure-time" data-testid="recommendation">
           {timeLabel(analysis.recommendation, scenario.timeZone)}
@@ -71,22 +58,19 @@ export default function Result({
         )}
         {analysis.status === "impossible" && (
           <div className="result-error" role="alert">
-            The listed connections cannot meet{" "}
-            {Math.round(scenario.confidence * 100)}% model coverage. Add earlier
-            departures, reduce durations, or move the deadline.
+            The listed connections cannot meet {Math.round(scenario.confidence * 100)}% model
+            coverage. Add earlier departures, reduce durations, or move the deadline.
           </div>
         )}
         {analysis.status === "constraint" && (
           <div className="result-error" role="alert">
-            Your earliest allowed departure is too late for this target.
-            Coverage at that time:{" "}
-            {Math.round((analysis.earliestCoverage ?? 0) * 100)}%. Change the
-            constraint or choose another plan.
+            Your earliest allowed departure is too late for this target. Coverage at that time:{" "}
+            {Math.round((analysis.earliestCoverage ?? 0) * 100)}%. Change the constraint or choose
+            another plan.
           </div>
         )}
         <div className="recommendation-footnote">
-          {SAMPLE_COUNT.toLocaleString()} repeatable model runs · rounded
-          earlier to the minute
+          {SAMPLE_COUNT.toLocaleString()} repeatable model runs · rounded earlier to the minute
         </div>
       </section>
       {analysis.prepared && analysis.recommendation !== null && (
@@ -113,19 +97,15 @@ export default function Result({
             />
             <div className="what-if-result">
               <strong>{timeLabel(leave, scenario.timeZone)}</strong>
-              <span
-                className={coverage < scenario.confidence ? "risk-text" : ""}
-              >
+              <span className={coverage < scenario.confidence ? "risk-text" : ""}>
                 {Math.round(coverage * 100)}% on time in model
               </span>
             </div>
-            {analysis.prepared.earliest !== null &&
-              leave! < analysis.prepared.earliest && (
-                <p className="risk-text">
-                  This departure is before your earliest allowed time.
-                </p>
-              )}
+            {analysis.prepared.earliest !== null && leave! < analysis.prepared.earliest && (
+              <p className="risk-text">This departure is before your earliest allowed time.</p>
+            )}
             <button
+              type="button"
               className="text-button"
               disabled={offset === 0}
               onClick={() => setOffset(0)}
@@ -137,9 +117,8 @@ export default function Result({
             <section className="distribution">
               <h2>Why this departure?</h2>
               <p>
-                Each bar is a latest workable departure from the model. Your
-                target keeps at least {Math.round(scenario.confidence * 100)}%
-                of all runs at or after the recommendation.
+                Each bar is a latest workable departure from the model. Your target keeps at least{" "}
+                {Math.round(scenario.confidence * 100)}% of all runs at or after the recommendation.
               </p>
               <div
                 className="histogram"
@@ -148,15 +127,12 @@ export default function Result({
               >
                 {chart.counts.map((n, i) => {
                   const boundary =
-                    chart.min +
-                    ((i + 0.5) / chart.counts.length) * (chart.max - chart.min);
+                    chart.min + ((i + 0.5) / chart.counts.length) * (chart.max - chart.min);
 
                   return (
                     <div
                       key={i}
-                      className={
-                        boundary < analysis.recommendation! ? "risk-bar" : ""
-                      }
+                      className={boundary < analysis.recommendation! ? "risk-bar" : ""}
                       style={{
                         height: `${Math.max(2, (n / Math.max(...chart.counts)) * 100)}%`,
                       }}
@@ -177,21 +153,17 @@ export default function Result({
               <div className="model-bounds">
                 <div>
                   <span>Typical durations</span>
-                  <strong>
-                    {timeLabel(analysis.typical, scenario.timeZone)}
-                  </strong>
+                  <strong>{timeLabel(analysis.typical, scenario.timeZone)}</strong>
                 </div>
                 <div>
                   <span>All slowest bounds</span>
-                  <strong>
-                    {timeLabel(analysis.bounded, scenario.timeZone)}
-                  </strong>
+                  <strong>{timeLabel(analysis.bounded, scenario.timeZone)}</strong>
                 </div>
               </div>
               {analysis.impossibleFraction > 0 && (
                 <p>
-                  {Math.round(analysis.impossibleFraction * 100)}% of runs have
-                  no feasible listed connection and are counted as failures.
+                  {Math.round(analysis.impossibleFraction * 100)}% of runs have no feasible listed
+                  connection and are counted as failures.
                 </p>
               )}
             </section>
@@ -204,14 +176,13 @@ export default function Result({
             <p>
               {dominant && dominant.minutes > 0 ? (
                 <>
-                  <strong>{dominant.label}</strong> is the biggest lever. If it
-                  always took its typical time, you could leave about{" "}
-                  <strong>{dominant.minutes} min later.</strong>
+                  <strong>{dominant.label}</strong> is the biggest lever. If it always took its
+                  typical time, you could leave about <strong>{dominant.minutes} min later.</strong>
                 </>
               ) : (
                 <>
-                  No single step changes the minute-level recommendation.
-                  Timetable jumps can hide smaller effects.
+                  No single step changes the minute-level recommendation. Timetable jumps can hide
+                  smaller effects.
                 </>
               )}
             </p>
@@ -238,10 +209,9 @@ export default function Result({
                 How to read this
               </summary>
               <p>
-                One step at a time is frozen at its typical duration; all other
-                sampled durations stay the same. Bars show how much later the
-                recommendation becomes. Effects overlap and do not add up.
-                Timetable gaps can amplify an effect. Zero does not mean a step
+                One step at a time is frozen at its typical duration; all other sampled durations
+                stay the same. Bars show how much later the recommendation becomes. Effects overlap
+                and do not add up. Timetable gaps can amplify an effect. Zero does not mean a step
                 has no uncertainty.
               </p>
             </details>
@@ -256,23 +226,22 @@ export default function Result({
           {scenario.linkedDelays
             ? `${Math.round(scenario.linkedDelays * 100)}% of runs share a duration percentile across all steps; other runs are independent.`
             : "All steps are independent."}{" "}
-          Buffers are fixed. Services follow only the schedule you entered.
-          Enter any check-in or appointment closing time as a step finish-by
-          cutoff. Cancellations and closures are outside this model.
+          Buffers are fixed. Services follow only the schedule you entered. Enter any check-in or
+          appointment closing time as a step finish-by cutoff. Cancellations and closures are
+          outside this model.
         </p>
         <p>
           <strong>
-            {Math.round(scenario.confidence * 100)}% is model coverage, not a
-            calibrated chance or a guarantee.
+            {Math.round(scenario.confidence * 100)}% is model coverage, not a calibrated chance or a
+            guarantee.
           </strong>{" "}
-          Slowest-bound departure only protects against the stated bounds and
-          listed schedule.
+          Slowest-bound departure only protects against the stated bounds and listed schedule.
         </p>
         {analysis.recommendation !== null && (
           <p>
             Time zone: {scenario.timeZone} · UTC
-            {offsetLabel(analysis.recommendation, scenario.timeZone)} at
-            departure. All steps share this time zone.
+            {offsetLabel(analysis.recommendation, scenario.timeZone)} at departure. All steps share
+            this time zone.
           </p>
         )}
       </section>

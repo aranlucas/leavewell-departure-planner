@@ -23,15 +23,7 @@ const step = (
 
 export function airportDemo(): Scenario {
   const train = step("rail", "Train to the airport", "transit", 36, 38, 44);
-  train.departures = [
-    "05:42",
-    "05:57",
-    "06:12",
-    "06:27",
-    "06:42",
-    "06:57",
-    "07:12",
-  ]
+  train.departures = ["05:42", "05:57", "06:12", "06:27", "06:42", "06:57", "07:12"]
     .map((t) => `2026-10-03T${t}`)
     .join("\n");
 
