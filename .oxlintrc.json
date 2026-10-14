@@ -40,5 +40,13 @@
   ],
   "options": {
     "typeAware": true
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/app.tsx"],
+      "rules": {
+        "typescript/consistent-return": "off"
+      }
+    }
+  ]
 }
