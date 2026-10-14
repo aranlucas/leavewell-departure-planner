@@ -5,5 +5,5 @@
     "checkJs": true,
     "types": ["node"]
   },
-  "include": ["server.mjs", "tools/oxlint/*.mjs"]
+  "include": ["server.mjs", "tools/oxlint/*.mjs", "test/**/*.mjs"]
 }

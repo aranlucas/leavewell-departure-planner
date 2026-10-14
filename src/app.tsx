@@ -95,7 +95,7 @@ export default function App() {
       window.removeEventListener("offline-cache-error", cacheFailure);
     };
   }, []);
-  useEffect((): void | (() => void) => {
+  useEffect(() => {
     if (!notice) {
       return;
     }
