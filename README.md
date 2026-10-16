@@ -6,26 +6,26 @@ All demo values are synthetic. The airport example resembles a Seattle airport t
 
 ## Run
 
-Requires Node.js 22 or later and npm. No API keys, accounts, location permissions, or backend database.
+Requires Node.js 22 or later and pnpm 12.11.2. No API keys, accounts, location permissions, or backend database.
 
 ```sh
-npm ci
-npm run build
-npm start
+pnpm install --frozen-lockfile
+pnpm run build
+pnpm start
 ```
 
 Open **http://127.0.0.1:4310**. The local server stays on loopback by default. After the first successful production load, the service worker caches the complete app shell. Reloading, calculating, editing, saving, and exporting continue offline. Exported scenarios are ordinary versioned JSON files, portable between devices through the Import button under Scenarios. New exports use format version 2; existing version 1 files and saved drafts migrate with independent durations and no added cutoffs.
 
-Development: `npm run dev` uses **https://leavewell.localhost**, served through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
+Development: `pnpm run dev` uses **https://leavewell.localhost**, served through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
 
 ```sh
-npm test
+pnpm test
 # Uses one Chromium worker; install the matching browser once if it is absent.
-npx playwright install chromium
-npm run test:e2e
+pnpm exec playwright install chromium
+pnpm run test:e2e
 ```
 
-`npm run test:e2e` starts the local server if none is running. Screenshots and exported sample JSON land in `artifacts/`; they are ignored by Git. `npx prettier --check src tests` checks source formatting.
+`pnpm run test:e2e` starts the local server if none is running. Screenshots and exported sample JSON land in `artifacts/`; they are ignored by Git. `pnpm exec prettier --check src tests` checks source formatting.
 
 ## Use
 

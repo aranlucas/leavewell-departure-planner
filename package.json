@@ -9,10 +9,10 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1 --port 4310 --strictPort",
     "start": "node server.mjs",
-    "test": "npm run typecheck:tooling && vitest run --maxWorkers=1 --minWorkers=1",
+    "test": "pnpm run typecheck:tooling && vitest run --maxWorkers=1 --minWorkers=1",
     "test:e2e": "playwright test",
     "lint": "oxlint .",
-    "check": "npm run lint && npm test && npm run build",
+    "check": "pnpm run lint && pnpm test && pnpm run build",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt --write",
     "format:check": "oxfmt --check",
@@ -51,5 +51,6 @@
     "*.{json,jsonc,json5,css,scss,md,mdx,yml,yaml,html,toml,vue,svelte,astro,graphql}": [
       "oxfmt --no-error-on-unmatched-pattern"
     ]
-  }
+  },
+  "packageManager": "pnpm@12.11.2"
 }

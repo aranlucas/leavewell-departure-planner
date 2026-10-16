@@ -1,6 +1,6 @@
 # Handoff
 
-Leavewell is complete as a local, usable prototype. Run `npm ci && npm run build && npm start`, then open http://127.0.0.1:4310. A prebuilt `dist` directory is also included in the portable source package; `node server.mjs` runs it without installing runtime dependencies.
+Leavewell is complete as a local, usable prototype. Run `pnpm install --frozen-lockfile && pnpm run build && pnpm start`, then open http://127.0.0.1:4310. A prebuilt `dist` directory is also included in the portable source package; `node server.mjs` runs it without installing runtime dependencies.
 
 ## Publication
 
