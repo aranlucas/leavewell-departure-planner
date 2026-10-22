@@ -210,6 +210,63 @@ test("offline production shell reloads, editing and persistence work without net
   await context.setOffline(false);
 });
 
+test("shell activation removes legacy caches and preserves unrelated caches", async ({ page }) => {
+  await page.evaluate(async () => {
+    const registration = await navigator.serviceWorker.ready;
+    await registration.unregister();
+    await caches.open("leavewell-shell-previous-release");
+    await caches.open("unrelated-app-cache");
+  });
+  await page.goto("about:blank");
+  await page.goto("/");
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await expect
+    .poll(() => page.evaluate(() => caches.keys()))
+    .not.toContain("leavewell-shell-previous-release");
+  expect(await page.evaluate(() => caches.keys())).toContain("unrelated-app-cache");
+});
+
+test("an unavailable shell asset prevents worker activation", async ({ browser }) => {
+  const context = await browser.newContext();
+
+  try {
+    await context.route("**/icon.svg", async (route) => {
+      await route.fulfill({ status: 503, body: "Shell asset unavailable" });
+    });
+
+    const probe = await context.newPage();
+    await probe.goto("http://127.0.0.1:4310/healthz");
+
+    const result = await probe.evaluate(async () => {
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const installing = registration.installing;
+
+      if (!installing) {
+        throw new Error("Expected a new worker installation");
+      }
+
+      await new Promise<void>((_resolve) => {
+        installing.addEventListener("statechange", () => {
+          if (installing.state === "redundant") {
+            _resolve();
+          }
+        });
+      });
+
+      return {
+        active: Boolean(registration.active),
+        controlled: Boolean(navigator.serviceWorker.controller),
+      };
+    });
+
+    expect(result).toEqual({ active: false, controlled: false });
+  } finally {
+    await context.close();
+  }
+});
+
 test("storage failure warns, preserves in-memory work, exports and retries", async ({ page }) => {
   await page.evaluate(() => {
     Storage.prototype.setItem = function () {
