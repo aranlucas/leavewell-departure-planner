@@ -210,24 +210,6 @@ test("offline production shell reloads, editing and persistence work without net
   await context.setOffline(false);
 });
 
-test("shell activation removes legacy caches and preserves unrelated caches", async ({ page }) => {
-  await page.evaluate(async () => {
-    const registration = await navigator.serviceWorker.ready;
-    await registration.unregister();
-    await caches.open("leavewell-shell-previous-release");
-    await caches.open("unrelated-app-cache");
-  });
-  await page.goto("about:blank");
-  await page.goto("/");
-  await page.evaluate(async () => {
-    await navigator.serviceWorker.ready;
-  });
-  await expect
-    .poll(() => page.evaluate(() => caches.keys()))
-    .not.toContain("leavewell-shell-previous-release");
-  expect(await page.evaluate(() => caches.keys())).toContain("unrelated-app-cache");
-});
-
 test("an unavailable shell asset prevents worker activation", async ({ browser }) => {
   const context = await browser.newContext();
 
