@@ -6,13 +6,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      strategies: "injectManifest",
-      srcDir: "worker",
-      filename: "sw.ts",
       injectRegister: false,
       manifest: false,
-      injectManifest: {
+      workbox: {
+        cacheId: "leavewell-shell",
         globPatterns: ["index.html", "assets/**/*.{js,css}", "icon.svg", "manifest.webmanifest"],
+        navigateFallback: "/index.html",
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
       },
     }),
   ],
