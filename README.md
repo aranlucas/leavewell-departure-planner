@@ -16,10 +16,7 @@ pnpm start
 
 Open **http://127.0.0.1:4310**. The local server stays on loopback by default. After the first successful production load, the service worker caches the complete app shell. Reloading, calculating, editing, saving, and exporting continue offline. Exported scenarios are ordinary versioned JSON files, portable between devices through the Import button under Scenarios. New exports use format version 2; existing version 1 files and saved drafts migrate with independent durations and no added cutoffs.
 
-`vite-plugin-pwa` injects the versioned shell and asset manifest during `pnpm build`.
-`worker/sw.ts` retains network-first navigation, the offline fallback, and cleanup of
-legacy `leavewell-shell-*` caches. Registration stays in `src/main.tsx`; the existing
-web manifest stays in `public/manifest.webmanifest`.
+`vite-plugin-pwa` generates the service worker and versioned offline shell precache during `pnpm build`.
 
 Development: `pnpm run dev` uses **https://leavewell.localhost**, served through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
 
