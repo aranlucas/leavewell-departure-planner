@@ -6,7 +6,7 @@ All demo values are synthetic. The airport example resembles a Seattle airport t
 
 ## Run
 
-Requires Node.js 22 or later and pnpm 12.11.2. No API keys, accounts, location permissions, or backend database.
+Requires Node.js 22 or later and the pnpm version pinned in `package.json`. No API keys, accounts, location permissions, or backend database.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -27,7 +27,7 @@ pnpm exec playwright install chromium
 pnpm run test:e2e
 ```
 
-`pnpm run test:e2e` starts the local server if none is running. Screenshots and exported sample JSON land in `artifacts/`; they are ignored by Git. `pnpm exec prettier --check src tests` checks source formatting.
+`pnpm run test:e2e` starts the local server if none is running. Screenshots and exported sample JSON land in `artifacts/`; they are ignored by Git. `pnpm format:check` checks formatting with the repository’s Oxfmt configuration; `pnpm format` applies it.
 
 ## Use
 
