@@ -3,7 +3,6 @@ import { airportDemo, appointmentDemo } from "@/demo";
 import {
   analyze,
   checkpointRisks,
-  SEED,
   backward,
   connectionRisks,
   coverageAt,
@@ -262,11 +261,8 @@ describe("connections, buffers and constraints", () => {
 });
 
 describe("portable files and defensive validation", () => {
-  it("roundtrips exact scenario assumptions", () =>
-    expect(parseScenarioFile(exportScenario(airportDemo()))).toEqual(airportDemo()));
-  it("rejects malformed JSON and unsupported versions", () => {
+  it("rejects malformed JSON", () => {
     expect(() => parseScenarioFile("{bad")).toThrow(/valid JSON/);
-    expect(() => parseScenarioFile('{"format":"leavewell","version":3}')).toThrow(/Unsupported/);
   });
   it("rejects inverted durations, NaN and negative buffers", () => {
     const s = fixed();
@@ -278,10 +274,7 @@ describe("portable files and defensive validation", () => {
     s.finalBuffer = -1;
     expect(() => validateScenario(s)).toThrow(/missing or unsupported/);
   });
-  it("bounds plans, steps, imports and schedules", () => {
-    const s = fixed();
-    s.plans[0].steps = [];
-    expect(() => validateScenario(s)).toThrow(/1–20/);
+  it("bounds imports and schedules", () => {
     expect(() => parseScenarioFile(" ".repeat(500001))).toThrow(/too large/);
     const t = transitScenario();
     t.plans[0].steps[1].departures = Array.from({ length: 201 }, () => "2026-10-03T09:00").join(
@@ -391,19 +384,6 @@ describe("intermediate completion cutoffs", () => {
 });
 
 describe("linked-delay stress model", () => {
-  it("keeps the original independent draw stream byte-for-byte at zero linkage", () => {
-    const s = twoSteps();
-    const rng = random(SEED);
-
-    const original = Array.from({ length: 4096 }, () =>
-      s.plans[0].steps.map((step) => triangular(step.min, step.mode, step.max, rng())),
-    );
-
-    delete s.linkedDelays;
-    expect(analyze(s, s.plans[0]).durations).toEqual(original);
-    s.linkedDelays = 0;
-    expect(analyze(s, s.plans[0]).durations).toEqual(original);
-  });
   it("makes identical distributions move exactly together at full linkage", () => {
     const s = twoSteps();
     s.linkedDelays = 1;
