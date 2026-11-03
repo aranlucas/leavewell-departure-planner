@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { airportDemo } from "@/demo";
-import {
-  exportScenario,
-  normalizeScenario,
-  parseScenarioFile,
-  validateScenario,
-} from "@/validation";
+import { exportScenario, parseScenarioFile, validateScenario } from "@/validation";
 
 const example = airportDemo();
 
@@ -98,7 +93,7 @@ describe("Zod scenario boundaries", () => {
       plans: [{ ...plan, extension: ["plan"], steps: [{ ...step, extension: { note: true } }] }],
     };
 
-    expect(parseScenarioFile(exportScenario(scenario))).toEqual(normalizeScenario(scenario));
+    expect(parseScenarioFile(exportScenario(scenario))).toEqual(scenario);
   });
 
   it("keeps structural editor validation separate from executable import dates", () => {
