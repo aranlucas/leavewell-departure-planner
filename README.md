@@ -6,7 +6,7 @@ All demo values are synthetic. The airport example resembles a Seattle airport t
 
 ## Run
 
-Requires Node.js 22 or later and the pnpm version pinned in `package.json`. No API keys, accounts, location permissions, or backend database.
+Use the Node.js version in `.node-version` and the pnpm version pinned in `package.json`. No API keys, accounts, location permissions, or backend database.
 
 ```sh
 pnpm install --frozen-lockfile
@@ -14,20 +14,21 @@ pnpm run build
 pnpm start
 ```
 
-Open **http://127.0.0.1:4310**. The local server stays on loopback by default. After the first successful production load, the service worker caches the complete app shell. Reloading, calculating, editing, saving, and exporting continue offline. Exported scenarios are ordinary versioned JSON files, portable between devices through the Import button under Scenarios. New exports use format version 2; existing version 1 files and saved drafts migrate with independent durations and no added cutoffs.
+Open **http://127.0.0.1:4310**. The local server stays on loopback by default. Wait for **Available offline**, then reload once while online before relying on the cached app. Reloading, calculating, editing, saving, and exporting continue offline. Exported scenarios are ordinary versioned JSON files, portable between devices through the Import button under Scenarios. New exports use format version 2; existing version 1 files and saved drafts migrate with independent durations and no added cutoffs.
 
-`vite-plugin-pwa` generates the service worker and versioned offline shell precache during `pnpm build`.
-
-Development: `pnpm run dev` uses **https://leavewell.localhost**, served through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. Offline caching is deliberately enabled only in production builds. Tests run against the production server:
+Development: `pnpm run dev` uses **https://leavewell.localhost**, served through [Portless](https://github.com/vercel-labs/portless) (a dev dependency); its first run may ask for `sudo` to bind port 443 and trust a local certificate. Offline caching is deliberately enabled only in production builds. Browser tests need a production build:
 
 ```sh
 pnpm test
 # Uses one Chromium worker; install the matching browser once if it is absent.
 pnpm exec playwright install chromium
+pnpm run build
 pnpm run test:e2e
 ```
 
 `pnpm run test:e2e` starts the local server if none is running. Screenshots and exported sample JSON land in `artifacts/`; they are ignored by Git. `pnpm format:check` checks formatting with the repository’s Oxfmt configuration; `pnpm format` applies it.
+
+Browser tests use Chromium desktop/mobile emulation. Physical devices, other browser engines, screen-reader output, multi-tab conflicts, and service-worker upgrades across releases need separate validation.
 
 ## Use
 
@@ -38,6 +39,12 @@ pnpm run test:e2e
 5. Save named scenarios locally, or export a file to share or back up. The valid draft is saved automatically. Incomplete duration edits do not overwrite the last valid stored draft; restore inputs before reloading to keep that edit.
 
 Optional constraints, linked-delay stress testing, and DST occurrence choices live under **Time settings & assumptions**. Spring-forward times that do not exist are rejected. Repeated fall-back times require a choice. Every step uses the scenario time zone; travel is measured in elapsed minutes across midnight and offset changes.
+
+## Storage and offline recovery
+
+- If device storage is unavailable or full, changes stay in memory. Resolve input errors and export each scenario you need before closing the tab, then use **Retry device saving**.
+- If stored data cannot be read, the demo opens with automatic saving paused and the existing bytes preserved. Back up the browser's `leavewell.v1` localStorage value before retrying if you need to recover that data; retrying writes the current workspace over it.
+- If offline caching fails, keep the tab open or reload online to retry. Development mode does not prepare an offline cache.
 
 ## Meaning of the output
 
@@ -51,6 +58,6 @@ The sensitivity bars freeze one duration at its mode and reuse all other samples
 
 - **Railway:** Dockerfile + `railway.json`, static Node server, `PORT` support, `/healthz`, non-root container user.
 - **Cloudflare Workers static assets:** `wrangler.jsonc` points to `dist` with SPA fallback. Build before deploying.
-- Nothing has been provisioned or deployed. No public release or paid infrastructure was created.
+- The Node server binds to `127.0.0.1` by default; the container sets `HOST=0.0.0.0` so the platform can reach it.
 
-See [research and decisions](docs/RESEARCH.md), [QA evidence](docs/QA.md), [optional APIs](docs/APIS.md), and [handoff/publication status](docs/HANDOFF.md).
+See [research and decisions](docs/RESEARCH.md), [optional APIs](docs/APIS.md), and the [proposed feature roadmap](ROADMAP.md).

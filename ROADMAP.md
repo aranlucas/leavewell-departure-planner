@@ -4,13 +4,6 @@ Updated 2026-10-26. Proposed work after the higher-priority Digits/MCP workflows
 The value to test is less effort deciding when to leave, not a claim that the
 model guarantees an on-time arrival.
 
-## Starting point
-
-Baseline: `98a6534003e28b33a2894ea089eec5abdcaef1bd`, described in the
-[README](README.md). The offline planner already handles dated transit,
-step cutoffs, time zones, linked-delay assumptions, saved scenarios, imports and
-exports. It uses entered bounds and schedules, not live traffic or transit.
-
 Target user: a traveler or commuter planning a journey with a hard arrival time
 and several steps that can go slowly.
 
@@ -66,5 +59,4 @@ Measure the complete planning task, not the number of simulations executed.
 
 Keep live provider integrations behind evidence that manual schedule entry is
 the limiting problem. Any integration must show source, fetch time and stale
-state while preserving useful offline behavior. Reuse Temporal, Zod and the
-existing test runners for date boundaries and complete template-to-plan flows.
+state while preserving useful offline behavior. See [candidate data sources](docs/APIS.md).

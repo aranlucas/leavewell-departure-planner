@@ -1,31 +1,17 @@
 # Research and decisions
 
-Research checked on 2026-10-01 during the delegated prototype session.
+The model propagates whole-journey uncertainty rather than adding a separate worst-case percentile to every step. [JCGM 101:2008, published by BIPM](https://www.bipm.org/en/committees/jc/jcgm/publications), provides the Monte Carlo precedent. Leavewell uses it as an educational product technique; it does not claim metrological compliance, calibrated travel probabilities, or convergence at a specified tolerance. See the [output interpretation and limits](../README.md#meaning-of-the-output).
 
-The useful precedent is distribution propagation rather than adding a separate worst-case percentile to every step. [JCGM 101:2008, published by BIPM](https://www.bipm.org/en/committees/jc/jcgm/publications) describes propagating input distributions with Monte Carlo, coverage intervals, triangular inputs, and joint distributions when inputs are dependent. Its numerical guidance also warns that finite simulations have uncertainty, particularly in interval endpoints. Leavewell adopts propagation as an educational product technique; it does not claim metrological compliance, calibrated travel probabilities, or convergence at a specified tolerance.
+## Why these assumptions
 
-[TC39's Temporal time-zone documentation](https://tc39.es/proposal-temporal/docs/timezone.html) distinguishes civil clock readings from exact instants and explains DST skipped/repeated times. [The maintained Temporal polyfill](https://github.com/js-temporal/temporal-polyfill) supplies those conversions consistently. Leavewell resolves dated inputs once, then subtracts elapsed milliseconds. Missing civil times fail; ambiguous ones require an explicit occurrence or offset. It uses the runtime's IANA time-zone data.
+- Triangular fastest/mode/slowest bounds are inputs users can understand and edit. Seeded draws give stable comparisons at a bounded interactive cost; rerendering should not randomly change the recommendation.
+- Backward inversion preserves the whole-connection jumps that summing travel intervals misses. A separate forward traversal checks the typical journey and missed cutoffs.
+- Linked delays are a stress assumption: a mixture of independent draws and draws sharing one percentile across steps. Each duration keeps its triangular marginal; full linkage makes every step share a percentile. The mixture fraction is not a measured correlation coefficient. Separate seeded streams and common random numbers keep comparisons repeatable.
+- Sensitivity holds one step at its mode while reusing all other samples. It answers how much later departure that change permits, rather than attributing variance; effects overlap and cannot be added.
+- [Temporal's time-zone model](https://tc39.es/proposal-temporal/docs/timezone.html) separates civil readings from exact instants. Resolving inputs once and then using elapsed time keeps travel durations consistent across midnight and DST. Rejected gaps and explicit overlap choices prevent silent shifts of the user's intended time.
+- Local storage and a local-only app shell allow planning without accounts, remote fonts, analytics, or data services. Versioned scenario exports provide a portable backup; provider imports must not make offline planning depend on a network connection.
+- CSS/SVG graphics support a deterministic offline interface. Pale neutral surfaces and dark teal decisions keep attention on departure, with sage for timing spread and ochre for risk; mobile places the departure card before journey editing.
 
-## Deliberate choices
+## Further experiments
 
-- Seeded 4,096-run simulation gives stable interaction and a small bounded workload. A rerender does not randomly change the recommendation.
-- Each duration uses fastest/mode/slowest triangular bounds, which users can understand and edit. Independence is the default and explicitly disclosed.
-- Backward inversion handles discrete departures directly, preserving the whole-connection jumps that interval sums miss. An independent forward traversal verifies the rendered typical journey and missed-connection cutoffs.
-- The confidence control is labeled **model coverage**. Impossible samples count as failures. Inclusive order statistics and rounding toward earlier departure are tested.
-- Sensitivity reuses the same samples with one step frozen at its typical value. This is a practical marginal experiment, not a variance attribution or additive decomposition.
-- LocalStorage keeps a versioned draft and up to 20 named scenarios. Import validates bounds and schema before entering the model. The production service worker caches only local assets; no remote fonts, analytics, AI APIs, personal accounts, or data sources are required.
-- CSS/SVG graphics keep the implementation deterministic and offline. The visual system uses pale neutral surfaces, dark teal decisions, sage timing spread, and ochre risk. An editorial heading contrasts with concise, labeled controls. Mobile puts the departure card before journey editing.
-
-## Verified overnight refinements
-
-Intermediate finish-by cutoffs now constrain the completion of any step, before its post-step buffer. Backward inversion intersects that cutoff with the downstream deadline; the forward timeline separately reports missed checkpoints even when the final arrival would fit. Dates, DST resolution, inclusive equality, transit arrival limits, and impossible connections have dedicated tests.
-
-The optional linked-delay stress control implements a mixture of independent joint draws and shared-percentile draws. In the chosen fraction of runs, every duration uses one common uniform quantile through its own triangular inverse CDF. Every marginal remains triangular. At 100%, steps are comonotonic; at 0%, the original independent seed stream is unchanged. The mixture fraction is not a measured correlation coefficient. A separate seeded linkage stream and common random numbers make slider comparisons repeatable. This is an implementation choice informed by JCGM's distinction between marginal and joint input distributions, not a claim that it reproduces actual traffic/security dependence.
-
-Version 2 portable files preserve these assumptions. Version 1 files and existing device storage gain empty checkpoints and 0% linkage without mutating imported inputs or altering their original departure samples.
-
-## Next useful experiments
-
-1. Let users enter observed durations locally, then compare triangular assumptions with empirical distributions without uploading data.
-2. Add connection-specific time zones for cross-zone travel while retaining elapsed-duration semantics.
-3. Allow sensitivity to timetables themselves: add one service or shift a schedule, then inspect the gained margin.
+The [feature roadmap](../ROADMAP.md) sets product priorities and acceptance criteria. Additional model questions worth testing are connection-specific time zones and sensitivity to adding a service or shifting a timetable. [Optional data sources](APIS.md) are candidates only if manual schedule entry proves to be the limiting problem.
