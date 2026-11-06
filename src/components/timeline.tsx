@@ -128,7 +128,9 @@ export default function Timeline({ analysis, scenario, leave }: TimelineProps) {
               ? "A step finish-by cutoff is missed, even if the final arrival fits. Try leaving earlier."
               : Number.isFinite(trip.arrival)
                 ? trip.arrival <= p.arrival
-                  ? `${Math.floor((p.arrival - trip.arrival) / MINUTE)} min before the hard deadline · ${scenario.finalBuffer} min reserved arrival buffer`
+                  ? trip.arrival > p.deadline
+                    ? `${Math.floor((p.arrival - trip.arrival) / MINUTE)} min before the hard deadline · reserved arrival buffer is not met`
+                    : `${Math.floor((p.arrival - trip.arrival) / MINUTE)} min before the hard deadline · ${scenario.finalBuffer} min reserved arrival buffer`
                   : `${Math.ceil((trip.arrival - p.arrival) / MINUTE)} min after the hard deadline`
                 : "Try leaving earlier or adding a later departure."}
           </span>

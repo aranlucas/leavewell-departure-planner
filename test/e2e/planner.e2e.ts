@@ -424,3 +424,71 @@ test("existing device workspace migrates without losing named scenarios or chang
     page.getByRole("dialog").getByRole("button", { name: /^Legacy saved trip/ }),
   ).toBeVisible();
 });
+
+test("offset-bearing imported constraints remain visible and editable", async ({ page }) => {
+  const scenario = airportDemo();
+  scenario.arrivalLocal = "2026-10-03T08:30-07:00";
+  scenario.earliestLocal = "2026-10-03T04:00-07:00";
+  await page.getByLabel("Import scenario file", { exact: true }).setInputFiles({
+    name: "offset.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(exportScenario(scenario)),
+  });
+  await expect(page.getByLabel("Hard arrival deadline", { exact: true })).toHaveValue(
+    scenario.arrivalLocal,
+  );
+  await page.getByLabel("Hard arrival deadline", { exact: true }).press("End");
+  await page.getByLabel("Hard arrival deadline", { exact: true }).press("Backspace");
+  await expect(page.getByLabel("Hard arrival deadline", { exact: true })).toHaveValue(
+    "2026-10-03T08:30-07:0",
+  );
+  await page.getByLabel("Hard arrival deadline", { exact: true }).fill(scenario.arrivalLocal);
+  await expandSettings(page);
+  await expect(page.getByLabel("Earliest allowed departure", { exact: true })).toHaveValue(
+    scenario.earliestLocal,
+  );
+  await page.getByLabel("Hard arrival deadline", { exact: true }).fill("2026-10-03T09:00-07:00");
+  await page.reload();
+  await expect(page.getByLabel("Hard arrival deadline", { exact: true })).toHaveValue(
+    "2026-10-03T09:00-07:00",
+  );
+});
+
+test("what-if arrival inside the reserved buffer reports that buffer unmet", async ({ page }) => {
+  const scenario = airportDemo();
+  const plan = scenario.plans[0];
+  scenario.plans = [plan];
+  scenario.activePlanId = plan.id;
+  scenario.finalBuffer = 15;
+  scenario.arrivalLocal = "2026-10-03T08:00";
+  plan.steps = [{ ...plan.steps[0], kind: "task", min: 10, mode: 10, max: 10, buffer: 0 }];
+  await page.getByLabel("Import scenario file", { exact: true }).setInputFiles({
+    name: "buffer.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(exportScenario(scenario)),
+  });
+  await expect(page.getByTestId("recommendation")).toHaveText("7:35 AM");
+  await page.getByLabel("Explore departure offset in minutes").fill("10");
+  await expect(page.locator(".arrival-line")).toContainText(
+    "5 min before the hard deadline · reserved arrival buffer is not met",
+  );
+});
+
+test("deleting with an incomplete draft does not claim durable success", async ({ page }) => {
+  await page.getByRole("button", { name: "Save scenario", exact: true }).click();
+  await page.getByLabel("Scenario name", { exact: true }).fill("");
+  await page.getByRole("button", { name: "Scenarios", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Delete saved Morning at the airport", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "Copy removed from this tab. Complete inputs",
+  );
+  await page.getByRole("button", { name: "Close dialog" }).click();
+  await page.getByLabel("Scenario name", { exact: true }).fill("Recovered draft");
+  await page.reload();
+  await page.getByRole("button", { name: "Scenarios", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Delete saved Morning at the airport", exact: true }),
+  ).toHaveCount(0);
+});

@@ -5,5 +5,11 @@
     "checkJs": true,
     "types": ["node"]
   },
-  "include": ["server.mjs", "playwright.config.ts", "test/e2e/**/*.e2e.ts"]
+  "include": [
+    "server.mjs",
+    "playwright.config.ts",
+    "test/e2e/**/*.e2e.ts",
+    "e2e.config.ts",
+    "test/journeys/**/*.e2e.ts"
+  ]
 }

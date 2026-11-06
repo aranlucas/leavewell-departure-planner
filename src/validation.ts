@@ -153,7 +153,15 @@ export function exportScenario(scenario: Scenario): string {
     scenario: normalizeScenario(scenario),
   };
 
-  return JSON.stringify(file, null, 2);
+  const raw = JSON.stringify(file, null, 2);
+
+  if (new TextEncoder().encode(raw).byteLength > LIMITS.fileSize) {
+    throw new Error(
+      "That scenario is too large to export. Reduce schedule entries or split plans into separate scenarios (500 KB limit).",
+    );
+  }
+
+  return raw;
 }
 
 export function normalizeScenario(scenario: Scenario): Scenario {

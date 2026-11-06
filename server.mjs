@@ -87,7 +87,11 @@ async function serveRequest(req, res) {
     if (req.method === "HEAD") {
       res.end();
     } else {
-      createReadStream(path).pipe(res);
+      const stream = createReadStream(path);
+      // Opening/reading can fail after stat; stream errors bypass async catch.
+      stream.on("error", () => res.destroy());
+      res.on("close", () => stream.destroy());
+      stream.pipe(res);
     }
   } catch {
     res.writeHead(404);
