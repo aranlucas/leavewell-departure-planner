@@ -1,5 +1,5 @@
 import { icons, kindNames } from "../step-kinds";
-import { isStepKind } from "../model";
+import { isStepKind, LIMITS } from "../model";
 import { ArrowDown, ArrowUp, ChevronDown, Trash2 } from "lucide-react";
 import { useState } from "react";
 import type { Step } from "../model";
@@ -53,7 +53,7 @@ export default function StepEditor({
           <div className="two-fields">
             <Field label="Step name">
               <input
-                maxLength={100}
+                maxLength={LIMITS.name}
                 value={step.label}
                 onChange={(e) => update({ label: e.target.value })}
               />
@@ -89,14 +89,14 @@ export default function StepEditor({
           <div className="two-fields">
             <NumberField
               label="Buffer after this step"
-              max={240}
+              max={LIMITS.buffer}
               value={step.buffer}
               onChange={(buffer) => update({ buffer })}
             />
             {step.kind === "transit" && (
               <NumberField
                 label="Boarding margin before departure"
-                max={120}
+                max={LIMITS.boardingBuffer}
                 value={step.boardingBuffer}
                 onChange={(boardingBuffer) => update({ boardingBuffer })}
               />
@@ -109,7 +109,7 @@ export default function StepEditor({
             <input
               type="text"
               inputMode="text"
-              maxLength={40}
+              maxLength={LIMITS.date}
               placeholder="2026-10-03T07:15"
               value={step.finishByLocal ?? ""}
               onChange={(e) => update({ finishByLocal: e.target.value })}
@@ -123,7 +123,7 @@ export default function StepEditor({
               <textarea
                 className="schedule-input"
                 rows={5}
-                maxLength={20000}
+                maxLength={LIMITS.departuresText}
                 spellCheck={false}
                 value={step.departures}
                 onChange={(e) => update({ departures: e.target.value })}

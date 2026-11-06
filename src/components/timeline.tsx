@@ -1,7 +1,7 @@
 import { ArrowRight, Flag, TrainFront } from "lucide-react";
 import type { Analysis } from "../engine";
-import { checkpointRisks, connectionRisks, forward } from "../engine";
-import { localDate, timeLabel } from "../time";
+import { journeySummary } from "../engine";
+import { MINUTE, localDate, timeLabel } from "../time";
 import type { Scenario } from "../model";
 import { icons } from "../step-kinds";
 
@@ -12,14 +12,13 @@ export default function Timeline({ analysis, scenario, leave }: TimelineProps) {
 
   const p = analysis.prepared;
 
-  const trip = forward(
-    p,
-    leave,
-    p.steps.map((s) => s.mode),
-  );
+  const summary = journeySummary(analysis, leave);
 
-  const risks = connectionRisks(analysis, leave, trip.rows);
-  const checkpoints = checkpointRisks(analysis, leave);
+  if (!summary) {
+    return null;
+  }
+
+  const { trip, connections: risks, checkpoints } = summary;
 
   return (
     <section className="timeline-section" aria-labelledby="timeline-title">
@@ -129,8 +128,8 @@ export default function Timeline({ analysis, scenario, leave }: TimelineProps) {
               ? "A step finish-by cutoff is missed, even if the final arrival fits. Try leaving earlier."
               : Number.isFinite(trip.arrival)
                 ? trip.arrival <= p.arrival
-                  ? `${Math.floor((p.arrival - trip.arrival) / 60000)} min before the hard deadline · ${scenario.finalBuffer} min reserved arrival buffer`
-                  : `${Math.ceil((trip.arrival - p.arrival) / 60000)} min after the hard deadline`
+                  ? `${Math.floor((p.arrival - trip.arrival) / MINUTE)} min before the hard deadline · ${scenario.finalBuffer} min reserved arrival buffer`
+                  : `${Math.ceil((trip.arrival - p.arrival) / MINUTE)} min after the hard deadline`
                 : "Try leaving earlier or adding a later departure."}
           </span>
         </div>

@@ -7,6 +7,8 @@ export const icons = {
   task: ListChecks,
 };
 
+export const addLabels = { walk: "Walk", drive: "Drive", transit: "Transit", task: "Task" };
+
 export const kindNames = {
   walk: "Walking",
   drive: "Driving",

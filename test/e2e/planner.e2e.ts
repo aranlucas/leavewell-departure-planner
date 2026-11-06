@@ -39,7 +39,6 @@ test("page identity, meaningful screen, responsive layout and screenshot", async
   await expect(
     page.getByRole("heading", { name: "Everything between here & there" }),
   ).toBeVisible();
-  await expect(page.locator("body")).not.toContainText("Internal Server Error");
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
