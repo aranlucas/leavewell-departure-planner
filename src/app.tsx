@@ -64,14 +64,14 @@ export default function App() {
       setPersisted(written);
       setStorageWarning("");
 
-      return written;
+      return written ? "saved" : "incomplete";
     } catch {
       setStorageWarning(
         "Device storage is unavailable or full. Your changes are in memory. Export a scenario file, then retry saving.",
       );
       setPersisted(false);
 
-      return false;
+      return "unavailable";
     }
   };
 
@@ -166,7 +166,7 @@ export default function App() {
 
       setSaved(next);
 
-      if (writeWorkspace(scenario, next)) {
+      if (writeWorkspace(scenario, next) === "saved") {
         setPauseSaving(false);
         setNotice("Scenario saved on this device.");
       }
@@ -298,7 +298,9 @@ export default function App() {
               onClick={() => {
                 setPauseSaving(false);
 
-                writeWorkspace(scenario, saved);
+                if (writeWorkspace(scenario, saved) === "unavailable") {
+                  setNotice("Device saving is still unavailable. Export a file for now.");
+                }
               }}
             >
               Retry device saving
