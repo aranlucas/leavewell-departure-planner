@@ -49,4 +49,4 @@ Finding 1 is a caller-facing public write-contract asymmetry, not a proven ordin
 - CI has ordinary lint, tooling types, unit tests, production build, existing desktop/mobile Playwright, and the real e2e workspace journey. Failure reports/traces are uploaded. A separate pre-fix job restores the five defective source files from the fixed audit base and requires exactly four failing unit cases and three failing desktop UI cases; infrastructure errors cannot count as success.
 - Independent same-provider review challenged findings and implementation. It identified the partial-offset editing trap; the implementation and regression were corrected before submission. Final review/CI results will be recorded in portfolio status and PR.
 
-The original immutable portfolio queue contains no entry for this added project. Do not infer or launch a cross-lane successor from another project; coordinator must supply lane ownership for any continuation.
+Portfolio assignment: Linux lane 3, following garmin-friend and before multiplayer-chat. Successor handoff is recorded in the external campaign tracker.
