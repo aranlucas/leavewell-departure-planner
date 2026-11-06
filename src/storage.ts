@@ -48,6 +48,7 @@ export function readWorkspace(): Workspace {
 export function persistWorkspace(draft: Scenario, saved: Scenario[]): boolean {
   try {
     validateScenario(draft);
+
     if (!workspaceSchema.safeParse({ draft, saved }).success) {
       return false;
     }

@@ -95,10 +95,12 @@ it.each(["malformed", "over capacity"])(
   (kind) => {
     const storage = mockStorage("retained");
     const draft = airportDemo();
+
     const saved =
       kind === "malformed"
         ? [{ ...draft, confidence: NaN }]
         : Array.from({ length: 21 }, airportDemo);
+
     expect(persistWorkspace(draft, saved)).toBe(false);
     expect(storage.setItem).not.toHaveBeenCalled();
   },
