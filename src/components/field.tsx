@@ -1,3 +1,4 @@
+import { LIMITS } from "../model";
 import { Children, cloneElement, isValidElement, useId } from "react";
 import type { InputHTMLAttributes, ReactNode } from "react";
 
@@ -43,7 +44,7 @@ export function NumberField({
   label,
   value,
   onChange,
-  max = 1440,
+  max = LIMITS.duration,
   ...props
 }: NumberFieldProps & Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
   const id = useId();

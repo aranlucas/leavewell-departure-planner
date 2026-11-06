@@ -1,6 +1,25 @@
-export type StepKind = "walk" | "drive" | "transit" | "task";
+export const STEP_KINDS = ["walk", "drive", "transit", "task"] as const;
 
-export type Disambiguation = "reject" | "earlier" | "later";
+export type StepKind = (typeof STEP_KINDS)[number];
+
+export const DISAMBIGUATIONS = ["reject", "earlier", "later"] as const;
+
+export type Disambiguation = (typeof DISAMBIGUATIONS)[number];
+
+export const LIMITS = {
+  name: 100,
+  date: 40,
+  assumption: 2000,
+  duration: 1440,
+  buffer: 240,
+  boardingBuffer: 120,
+  departuresText: 20_000,
+  departures: 200,
+  steps: 20,
+  plans: 5,
+  saved: 20,
+  fileSize: 500_000,
+} as const;
 
 export interface Step {
   id: string;
@@ -62,11 +81,11 @@ export function newStep(kind: StepKind = "task"): Step {
 }
 
 export function isStepKind(value: string): value is StepKind {
-  return value === "walk" || value === "drive" || value === "transit" || value === "task";
+  return STEP_KINDS.some((kind) => kind === value);
 }
 
 export function isDisambiguation(value: string): value is Disambiguation {
-  return value === "reject" || value === "earlier" || value === "later";
+  return DISAMBIGUATIONS.some((choice) => choice === value);
 }
 
 export function errorMessage(cause: unknown): string {

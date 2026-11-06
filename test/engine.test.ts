@@ -2,9 +2,8 @@ import { assert, describe, expect, it } from "vitest";
 import { airportDemo, appointmentDemo } from "@/demo";
 import {
   analyze,
-  checkpointRisks,
+  journeySummary,
   backward,
-  connectionRisks,
   coverageAt,
   departureQuantile,
   forward,
@@ -252,10 +251,22 @@ describe("connections, buffers and constraints", () => {
     s.plans[0].steps[1].departures = "2026-10-03T09:30";
     const a = analyze(s, s.plans[0]);
     assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
-    const t = forward(a.prepared, a.recommendation, [10, 20]);
-    const r = connectionRisks(a, a.recommendation + 1, t.rows);
+
+    const summary = journeySummary(
+      {
+        ...a,
+        durations: [
+          [10, 20],
+          [11, 20],
+        ],
+      },
+      a.recommendation,
+    );
+
+    const r = summary?.connections ?? [];
+    expect(journeySummary(a, a.recommendation + 1)?.trip.arrival).toBe(Infinity);
     expect(r[0].cutoff).toBe(epoch("2026-10-03T09:28"));
-    expect(r[0].miss).toBe(1);
+    expect(r[0].miss).toBe(0.5);
     expect(r[0].next).toBeNull();
   });
 });
@@ -364,8 +375,8 @@ describe("intermediate completion cutoffs", () => {
     s.plans[0].steps[0].finishByLocal = "2026-10-03T07:00";
     const a = analyze(s, s.plans[0]);
     assert(a.prepared !== null && a.recommendation !== null, "Expected a runnable analysis");
-    expect(checkpointRisks(a, a.recommendation)[0].miss).toBe(0);
-    expect(checkpointRisks(a, a.recommendation + MINUTE)[0].miss).toBe(1);
+    expect(journeySummary(a, a.recommendation)?.checkpoints[0].miss).toBe(0);
+    expect(journeySummary(a, a.recommendation + MINUTE)?.checkpoints[0].miss).toBe(1);
     expect(coverageAt(a.samples, a.recommendation + MINUTE)).toBe(0);
   });
   it("resolves overnight and DST checkpoint dates rather than comparing clock strings", () => {

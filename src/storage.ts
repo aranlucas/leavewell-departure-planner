@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { airportDemo } from "./demo";
+import { LIMITS } from "./model";
 import type { Scenario } from "./model";
 import { normalizeScenario, scenarioSchema, validateScenario } from "./validation";
 
@@ -13,7 +14,7 @@ export interface Workspace {
 
 const workspaceSchema = z.object({
   draft: scenarioSchema,
-  saved: z.array(scenarioSchema).max(20),
+  saved: z.array(scenarioSchema).max(LIMITS.saved),
 });
 
 export function readWorkspace(): Workspace {

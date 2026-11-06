@@ -1,4 +1,4 @@
-import { errorMessage, isDisambiguation, newStep, uid } from "./model";
+import { errorMessage, isDisambiguation, LIMITS, STEP_KINDS, newStep, uid } from "./model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -15,7 +15,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { airportDemo, appointmentDemo } from "./demo";
-import { analyze } from "./engine";
+import { analyze, SAMPLE_COUNT } from "./engine";
 import type { Plan, Scenario } from "./model";
 import { persistWorkspace, readWorkspace } from "./storage";
 import { exportScenario, parseScenarioFile } from "./validation";
@@ -25,6 +25,7 @@ import StepEditor from "./components/step-editor";
 import Timeline from "./components/timeline";
 import Result from "./components/result";
 import Dialog from "./components/dialog";
+import { addLabels } from "./step-kinds";
 
 export default function App() {
   const [initial] = useState(readWorkspace);
@@ -57,20 +58,27 @@ export default function App() {
 
   const leave = analysis.recommendation === null ? null : analysis.recommendation + offset * MINUTE;
 
-  useEffect(() => {
-    if (pauseSaving) {
-      return;
-    }
-
+  const writeWorkspace = (draft: Scenario, copies: Scenario[]) => {
     try {
-      // oxlint-disable-next-line react/set-state-in-effect -- Report the synchronous localStorage write result; storage I/O must stay outside render.
-      setPersisted(persistWorkspace(scenario, saved));
+      const written = persistWorkspace(draft, copies);
+      setPersisted(written);
       setStorageWarning("");
+
+      return written;
     } catch {
       setStorageWarning(
         "Device storage is unavailable or full. Your changes are in memory. Export a scenario file, then retry saving.",
       );
       setPersisted(false);
+
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    if (!pauseSaving) {
+      // oxlint-disable-next-line react/set-state-in-effect -- Report storage I/O outside render.
+      writeWorkspace(scenario, saved);
     }
   }, [scenario, saved, pauseSaving]);
   useEffect(() => {
@@ -113,7 +121,7 @@ export default function App() {
     }
 
     try {
-      if (file.size > 500000) {
+      if (file.size > LIMITS.fileSize) {
         throw new Error("Choose a scenario file under 500 KB.");
       }
 
@@ -150,7 +158,7 @@ export default function App() {
         throw new Error("Resolve the highlighted model inputs before saving a named scenario.");
       }
 
-      if (saved.length >= 20 && !saved.some((s) => s.id === scenario.id)) {
+      if (saved.length >= LIMITS.saved && !saved.some((s) => s.id === scenario.id)) {
         throw new Error("You have 20 saved scenarios. Export or remove one before saving another.");
       }
 
@@ -158,15 +166,9 @@ export default function App() {
 
       setSaved(next);
 
-      try {
-        persistWorkspace(scenario, next);
+      if (writeWorkspace(scenario, next)) {
         setPauseSaving(false);
-        setStorageWarning("");
         setNotice("Scenario saved on this device.");
-      } catch {
-        setStorageWarning(
-          "Device saving failed. Your scenario is still in memory; export a file and retry.",
-        );
       }
     } catch (error) {
       setNotice(errorMessage(error));
@@ -203,7 +205,7 @@ export default function App() {
     const plan = {
       ...structuredClone(active),
       id: uid(),
-      name: `${active.name} copy`.slice(0, 100),
+      name: `${active.name} copy`.slice(0, LIMITS.name),
       steps: active.steps.map((s) => ({ ...s, id: uid() })),
     };
 
@@ -268,7 +270,7 @@ export default function App() {
             <Field label="Scenario name">
               <input
                 className="title-input"
-                maxLength={100}
+                maxLength={LIMITS.name}
                 value={scenario.name}
                 onChange={(e) => update({ name: e.target.value })}
               />
@@ -296,12 +298,7 @@ export default function App() {
               onClick={() => {
                 setPauseSaving(false);
 
-                try {
-                  setPersisted(persistWorkspace(scenario, saved));
-                  setStorageWarning("");
-                } catch {
-                  setNotice("Device saving is still unavailable. Export a file for now.");
-                }
+                writeWorkspace(scenario, saved);
               }}
             >
               Retry device saving
@@ -320,7 +317,7 @@ export default function App() {
             <Field label="Time zone">
               <input
                 list="zones"
-                maxLength={100}
+                maxLength={LIMITS.name}
                 value={scenario.timeZone}
                 onChange={(e) => update({ timeZone: e.target.value })}
               />
@@ -361,7 +358,7 @@ export default function App() {
           </div>
           <NumberField
             label="Arrival buffer"
-            max={240}
+            max={LIMITS.buffer}
             value={scenario.finalBuffer}
             onChange={(finalBuffer) => update({ finalBuffer })}
           />
@@ -430,7 +427,7 @@ export default function App() {
             >
               <textarea
                 rows={3}
-                maxLength={2000}
+                maxLength={LIMITS.assumption}
                 value={scenario.assumption}
                 onChange={(e) => update({ assumption: e.target.value })}
               />
@@ -445,7 +442,7 @@ export default function App() {
                 <button
                   type="button"
                   className="text-button"
-                  disabled={scenario.plans.length >= 5}
+                  disabled={scenario.plans.length >= LIMITS.plans}
                   onClick={duplicate}
                 >
                   <Plus size={15} />
@@ -492,7 +489,7 @@ export default function App() {
               <div className="plan-name-row">
                 <Field label="Plan name">
                   <input
-                    maxLength={100}
+                    maxLength={LIMITS.name}
                     value={active.name}
                     onChange={(e) => updatePlan({ ...active, name: e.target.value })}
                   />
@@ -540,12 +537,12 @@ export default function App() {
               </div>
               <div className="add-step-row">
                 <span>Add a step</span>
-                {(["walk", "drive", "transit", "task"] as const).map((k) => (
+                {STEP_KINDS.map((k) => (
                   <button
                     type="button"
                     key={k}
                     className="button small-button"
-                    disabled={active.steps.length >= 20}
+                    disabled={active.steps.length >= LIMITS.steps}
                     onClick={() =>
                       updatePlan({
                         ...active,
@@ -554,13 +551,7 @@ export default function App() {
                     }
                   >
                     <Plus size={13} />
-                    {k === "task"
-                      ? "Task"
-                      : k === "transit"
-                        ? "Transit"
-                        : k === "drive"
-                          ? "Drive"
-                          : "Walk"}
+                    {addLabels[k]}
                   </button>
                 ))}
               </div>
@@ -576,12 +567,12 @@ export default function App() {
               <details>
                 <summary>See the method & limits</summary>
                 <p>
-                  The same seeded 4,096 triangular draws are used on every calculation. The
-                  recommendation is a lower-tail quantile of the latest feasible departure: at least
-                  your chosen percentage of sample runs still work when leaving at that minute. A
-                  forward simulation verifies the timeline. Earlier trains are allowed; only entered
-                  departures exist. Sensitivity freezes one duration at its mode with the other
-                  samples unchanged.
+                  The same seeded {SAMPLE_COUNT.toLocaleString()} triangular draws are used on every
+                  calculation. The recommendation is a lower-tail quantile of the latest feasible
+                  departure: at least your chosen percentage of sample runs still work when leaving
+                  at that minute. A forward simulation verifies the timeline. Earlier trains are
+                  allowed; only entered departures exist. Sensitivity freezes one duration at its
+                  mode with the other samples unchanged.
                 </p>
                 <p>
                   Finite samples have error and inputs are assumptions. Linked durations are a
@@ -694,7 +685,10 @@ export default function App() {
           </div>
           <div className="library-section">
             <h3>
-              Saved scenarios <span>{saved.length} / 20</span>
+              Saved scenarios{" "}
+              <span>
+                {saved.length} / {LIMITS.saved}
+              </span>
             </h3>
             {saved.length === 0 ? (
               <p className="empty-state">

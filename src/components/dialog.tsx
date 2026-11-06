@@ -19,6 +19,7 @@ export default function Dialog({ title, onClose, children }: DialogProps) {
   }, []);
 
   return (
+    // oxlint-disable-next-line jsx-a11y/click-events-have-key-events -- Native dialog cancel handles Escape; backdrop clicks are an additional dismissal path.
     <dialog
       ref={ref}
       className="dialog"
@@ -26,12 +27,6 @@ export default function Dialog({ title, onClose, children }: DialogProps) {
       onCancel={(e) => {
         e.preventDefault();
         onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          e.preventDefault();
-          onClose();
-        }
       }}
       onClick={(e) => {
         if (e.target === e.currentTarget) {

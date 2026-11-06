@@ -13,7 +13,6 @@ export function parseTime(
     throw new Error("Use a full date and time, such as 2026-10-03T06:12.");
   }
 
-  // Validate the zone even for exact-time input.
   try {
     Temporal.Instant.fromEpochMilliseconds(0).toZonedDateTimeISO(zone);
   } catch {

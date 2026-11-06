@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { Scenario, ScenarioFile } from "./model";
-import { parseTime } from "./time";
+import { DISAMBIGUATIONS, LIMITS, STEP_KINDS } from "./model";
+import { prepareTiming } from "./prepare";
 
 const SCENARIO_ERROR =
   "This scenario has missing or unsupported fields. Import a Leavewell version 1 or 2 file.";
@@ -11,7 +12,7 @@ const STEP_ERROR =
   "Step durations and buffers must be finite, nonnegative minutes within the supported limits.";
 
 // Preserve the file format's existing UTF-16 length limits without trimming user text.
-const boundaryText = (maximum = 100, minimum = 1) =>
+const boundaryText = (maximum: number = LIMITS.name, minimum = 1) =>
   z.string().refine((value) => value.length >= minimum && value.length <= maximum);
 
 const minutes = (maximum: number) => z.number().min(0).max(maximum);
@@ -20,14 +21,14 @@ const stepSchema = z
   .looseObject({
     id: boundaryText(),
     label: boundaryText(),
-    kind: z.enum(["walk", "drive", "transit", "task"]),
-    min: minutes(1440),
-    mode: minutes(1440),
-    max: minutes(1440),
-    buffer: minutes(240),
-    boardingBuffer: minutes(120),
-    departures: boundaryText(20_000, 0),
-    finishByLocal: boundaryText(40, 0).optional(),
+    kind: z.enum(STEP_KINDS),
+    min: minutes(LIMITS.duration),
+    mode: minutes(LIMITS.duration),
+    max: minutes(LIMITS.duration),
+    buffer: minutes(LIMITS.buffer),
+    boardingBuffer: minutes(LIMITS.boardingBuffer),
+    departures: boundaryText(LIMITS.departuresText, 0),
+    finishByLocal: boundaryText(LIMITS.date, 0).optional(),
   })
   .superRefine((step, context) => {
     if (step.min > step.mode || step.mode > step.max) {
@@ -42,7 +43,7 @@ const planSchema = z
   .looseObject({
     id: boundaryText(),
     name: boundaryText(),
-    steps: z.array(stepSchema).min(1).max(20),
+    steps: z.array(stepSchema).min(1).max(LIMITS.steps),
   })
   .superRefine((plan, context) => {
     const ids = new Set<string>();
@@ -61,16 +62,16 @@ export const scenarioSchema = z
   .looseObject({
     id: boundaryText(),
     name: boundaryText(),
-    arrivalLocal: boundaryText(40),
+    arrivalLocal: boundaryText(LIMITS.date),
     timeZone: boundaryText(),
-    disambiguation: z.enum(["reject", "earlier", "later"]),
-    earliestLocal: boundaryText(40, 0),
+    disambiguation: z.enum(DISAMBIGUATIONS),
+    earliestLocal: boundaryText(LIMITS.date, 0),
     confidence: z.number().min(0.5).max(1),
     linkedDelays: z.number().min(0).max(1).optional(),
-    finalBuffer: minutes(240),
+    finalBuffer: minutes(LIMITS.buffer),
     activePlanId: boundaryText(),
-    assumption: boundaryText(2000, 0),
-    plans: z.array(planSchema).min(1).max(5),
+    assumption: boundaryText(LIMITS.assumption, 0),
+    plans: z.array(planSchema).min(1).max(LIMITS.plans),
   })
   .superRefine((scenario, context) => {
     const ids = new Set<string>();
@@ -94,7 +95,6 @@ const scenarioFileSchema = z.object({
   scenario: z.unknown().optional(),
 });
 
-/** Validate imported/localStorage data before allowing it to enter the engine. */
 export function validateScenario(data: unknown): asserts data is Scenario {
   const result = scenarioSchema.safeParse(data, {
     error: (issue) => {
@@ -114,7 +114,7 @@ export function validateScenario(data: unknown): asserts data is Scenario {
 }
 
 export function parseScenarioFile(raw: string): Scenario {
-  if (raw.length > 500_000) {
+  if (raw.length > LIMITS.fileSize) {
     throw new Error("That file is too large. Choose a scenario file under 500 KB.");
   }
 
@@ -135,33 +135,9 @@ export function parseScenarioFile(raw: string): Scenario {
   validateScenario(envelope.data.scenario);
   // Imported files must be runnable. Editor drafts can temporarily be invalid.
   const s = envelope.data.scenario;
-  parseTime(s.arrivalLocal, s.timeZone, s.disambiguation);
 
-  if (s.earliestLocal) {
-    parseTime(s.earliestLocal, s.timeZone, s.disambiguation);
-  }
-
-  for (const p of s.plans) {
-    for (const step of p.steps) {
-      if (step.finishByLocal) {
-        parseTime(step.finishByLocal, s.timeZone, s.disambiguation);
-      }
-
-      if (step.kind === "transit") {
-        const entries = step.departures
-          .split(/[\n,]+/)
-          .map((v) => v.trim())
-          .filter(Boolean);
-
-        if (!entries.length || entries.length > 200) {
-          throw new Error(`${step.label}: enter 1–200 dated departures.`);
-        }
-
-        for (const v of entries) {
-          parseTime(v, s.timeZone, s.disambiguation);
-        }
-      }
-    }
+  for (const plan of s.plans) {
+    prepareTiming(s, plan);
   }
 
   return normalizeScenario(s);
@@ -180,7 +156,6 @@ export function exportScenario(scenario: Scenario): string {
   return JSON.stringify(file, null, 2);
 }
 
-/** Add v2 defaults without changing old plans or mutating caller-owned inputs. */
 export function normalizeScenario(scenario: Scenario): Scenario {
   return {
     ...scenario,

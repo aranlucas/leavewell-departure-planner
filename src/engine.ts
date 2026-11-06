@@ -1,23 +1,13 @@
 import { errorMessage } from "./model";
 import type { Plan, Scenario, Step } from "./model";
-import { MINUTE, parseTime } from "./time";
+import { MINUTE } from "./time";
+import { prepareTiming } from "./prepare";
+import type { PreparedPlan } from "./prepare";
 import { validateScenario } from "./validation";
 
 export const SAMPLE_COUNT = 4096;
 
 export const SEED = 0x1eaf2026;
-
-interface PreparedStep extends Step {
-  schedule: number[];
-  finishBy: number | null;
-}
-
-export interface PreparedPlan {
-  steps: PreparedStep[];
-  deadline: number;
-  arrival: number;
-  earliest: number | null;
-}
 
 export interface TimelineRow {
   step: Step;
@@ -89,54 +79,7 @@ export function triangular(min: number, mode: number, max: number, u: number): n
 export function prepare(scenario: Scenario, plan: Plan): PreparedPlan {
   validateScenario(scenario);
 
-  const arrival = parseTime(scenario.arrivalLocal, scenario.timeZone, scenario.disambiguation);
-
-  const earliest = scenario.earliestLocal
-    ? parseTime(scenario.earliestLocal, scenario.timeZone, scenario.disambiguation)
-    : null;
-
-  const steps = plan.steps.map((step) => {
-    let schedule: number[] = [];
-
-    if (step.kind === "transit") {
-      const entries = step.departures
-        .split(/[\n,]+/)
-        .map((x) => x.trim())
-        .filter(Boolean);
-
-      if (!entries.length || entries.length > 200) {
-        throw new Error(`${step.label}: enter 1–200 dated departures.`);
-      }
-
-      try {
-        schedule = [
-          ...new Set(entries.map((t) => parseTime(t, scenario.timeZone, scenario.disambiguation))),
-          // oxlint-disable-next-line unicorn/no-array-sort -- Sort only a fresh or copied array; preserve the existing ES2022 browser target.
-        ].sort((a, b) => a - b);
-      } catch (error) {
-        throw new Error(`${step.label}: ${errorMessage(error)}`, { cause: error });
-      }
-    }
-
-    let finishBy: number | null = null;
-
-    if (step.finishByLocal) {
-      try {
-        finishBy = parseTime(step.finishByLocal, scenario.timeZone, scenario.disambiguation);
-      } catch (error) {
-        throw new Error(`${step.label} finish-by: ${errorMessage(error)}`, { cause: error });
-      }
-    }
-
-    return { ...step, schedule, finishBy };
-  });
-
-  return {
-    steps,
-    arrival,
-    deadline: arrival - scenario.finalBuffer * MINUTE,
-    earliest,
-  };
+  return prepareTiming(scenario, plan);
 }
 
 /** Invert each monotone FIFO step, including timetable discontinuities. */
@@ -330,22 +273,25 @@ export function analyze(scenario: Scenario, plan: Plan, count = SAMPLE_COUNT): A
   }
 }
 
-export function connectionRisks(
-  analysis: Analysis,
-  departure: number,
-  rows: TimelineRow[],
-): ConnectionRisk[] {
+export function journeySummary(analysis: Analysis, leave: number) {
   if (!analysis.prepared) {
-    return [];
+    return null;
   }
 
   const p = analysis.prepared;
-  const runs = analysis.durations.map((ds) => forward(p, departure, ds));
 
-  return rows.flatMap((row, j) => {
-    const { cutoff, departure: scheduledDeparture } = row;
+  const trip = forward(
+    p,
+    leave,
+    p.steps.map((step) => step.mode),
+  );
 
-    if (cutoff === null || scheduledDeparture === null || !Number.isFinite(scheduledDeparture)) {
+  const runs = analysis.durations.map((durations) => forward(p, leave, durations));
+
+  const connections: ConnectionRisk[] = trip.rows.flatMap((row, index) => {
+    const { cutoff, departure } = row;
+
+    if (cutoff === null || departure === null || !Number.isFinite(departure)) {
       return [];
     }
 
@@ -353,11 +299,24 @@ export function connectionRisks(
       {
         id: row.step.id,
         cutoff,
-        miss: runs.filter((r) => r.rows[j].ready > cutoff).length / runs.length,
-        next: p.steps[j].schedule.find((t) => t > scheduledDeparture) ?? null,
+        miss: runs.length
+          ? runs.filter((run) => run.rows[index].ready > cutoff).length / runs.length
+          : 0,
+        next: p.steps[index].schedule.find((time) => time > departure) ?? null,
       },
     ];
   });
+
+  const checkpoints: CheckpointRisk[] = p.steps
+    .filter((step) => step.finishBy !== null)
+    .map((step) => ({
+      id: step.id,
+      miss: runs.length
+        ? runs.filter((run) => run.missedCutoffs.includes(step.id)).length / runs.length
+        : 0,
+    }));
+
+  return { trip, connections, checkpoints };
 }
 
 export function histogram(samples: number[], bins = 28): Histogram | null {
@@ -378,34 +337,6 @@ export function histogram(samples: number[], bins = 28): Histogram | null {
   }
 
   return { min, max: Math.max(max, min + MINUTE), counts };
-}
-
-/** Each checkpoint’s marginal failure rate; these rates overlap and are not additive. */
-export function checkpointRisks(analysis: Analysis, leave: number): CheckpointRisk[] {
-  if (!analysis.prepared || !analysis.durations.length) {
-    return [];
-  }
-
-  const steps = analysis.prepared.steps.filter((s) => s.finishBy !== null);
-
-  if (!steps.length) {
-    return [];
-  }
-
-  const counts = new Map(steps.map((s) => [s.id, 0]));
-
-  for (const durations of analysis.durations) {
-    const trip = forward(analysis.prepared, leave, durations);
-
-    for (const id of trip.missedCutoffs) {
-      counts.set(id, (counts.get(id) ?? 0) + 1);
-    }
-  }
-
-  return steps.map((s) => ({
-    id: s.id,
-    miss: (counts.get(s.id) ?? 0) / analysis.durations.length,
-  }));
 }
 
 interface ConnectionRisk {
