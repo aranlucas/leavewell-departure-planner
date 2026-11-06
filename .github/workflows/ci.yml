@@ -47,3 +47,67 @@ jobs:
 
       - name: Run browser tests
         run: pnpm run test:e2e
+
+      - name: Install e2e Chromium
+        run: pnpm exec e2e-web install chromium --with-deps
+
+      - name: Run deterministic workspace journeys
+        run: pnpm run test:journeys
+
+      - name: Upload failure evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: reliability-evidence
+          path: |
+            .e2e/report.json
+            .e2e/junit.xml
+            .e2e/results
+            test-results
+            artifacts
+          if-no-files-found: warn
+
+  pre-fix-reproduction:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: pnpm/setup@a0881977cd8ea73b1ed212236c99ca10dcc80cf4 # v3.1.1
+        with:
+          node-version-file: .node-version
+          cache: true
+          require-lockfile: true
+      - name: Restore defective source with current regression tests
+        run: |
+          for file in src/storage.ts src/validation.ts server.mjs src/app.tsx src/components/timeline.tsx; do
+            git show 7389ea68dbca5ce177daa047ba3d711f7219390f:"$file" > "$file"
+          done
+      - name: Prove four unit regressions fail on the audited base
+        run: |
+          set +e
+          pnpm exec vitest run test/storage.test.ts test/server.test.ts test/validation.test.ts -t 'rejects a .*saved collection|keeps serving after|rejects an export whose' --reporter=json --outputFile=base-unit.json
+          result=$?
+          set -e
+          test "$result" -eq 1
+          node --input-type=module -e 'import fs from "node:fs"; const r=JSON.parse(fs.readFileSync("base-unit.json")); if(r.numFailedTests!==4 || r.numPassedTests!==0) process.exit(1)'
+      - run: pnpm run build
+      - run: pnpm exec playwright install --with-deps chromium --only-shell
+      - name: Prove UI regressions fail on the audited base
+        run: |
+          set +e
+          pnpm exec playwright test -g 'offset-bearing imported|what-if arrival inside|deleting with an incomplete' --project=desktop --reporter=json > base-browser.json
+          result=$?
+          set -e
+          test "$result" -eq 1
+          node --input-type=module -e 'import fs from "node:fs"; const r=JSON.parse(fs.readFileSync("base-browser.json")); if(r.stats.unexpected!==3 || r.stats.expected!==0) process.exit(1)'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: ${{ !cancelled() }}
+        with:
+          name: pre-fix-regression-evidence
+          path: |
+            base-unit.json
+            base-browser.json
+            test-results

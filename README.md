@@ -61,3 +61,5 @@ The sensitivity bars freeze one duration at its mode and reuse all other samples
 - The Node server binds to `127.0.0.1` by default; the container sets `HOST=0.0.0.0` so the platform can reach it.
 
 See [research and decisions](docs/RESEARCH.md), [optional APIs](docs/APIS.md), and the [proposed feature roadmap](ROADMAP.md).
+
+The deterministic [tester-army/e2e](https://github.com/tester-army/e2e) workspace journey runs in CI with `pnpm run test:journeys` against the production build. It uses exact locators and assertions and requires no model credentials. Existing Playwright tests cover the wider offline/import/checkpoint flows. See [the reliability audit](docs/reliability-audit.md) for findings and pre-fix reproduction gates.

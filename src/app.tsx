@@ -18,7 +18,7 @@ import { airportDemo, appointmentDemo } from "./demo";
 import { analyze, SAMPLE_COUNT } from "./engine";
 import type { Plan, Scenario } from "./model";
 import { persistWorkspace, readWorkspace } from "./storage";
-import { exportScenario, parseScenarioFile } from "./validation";
+import { exportScenario, parseScenarioFile, validateScenario } from "./validation";
 import { MINUTE, timeLabel } from "./time";
 import { Field, NumberField } from "./components/field";
 import StepEditor from "./components/step-editor";
@@ -152,7 +152,7 @@ export default function App() {
 
   const save = () => {
     try {
-      exportScenario(scenario);
+      validateScenario(scenario);
 
       if (analyses.some((a) => a.error)) {
         throw new Error("Resolve the highlighted model inputs before saving a named scenario.");
@@ -311,7 +311,12 @@ export default function App() {
           <div className="arrival-fields">
             <Field label="Hard arrival deadline">
               <input
-                type="datetime-local"
+                type={
+                  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(scenario.arrivalLocal) ||
+                  !scenario.arrivalLocal
+                    ? "datetime-local"
+                    : "text"
+                }
                 value={scenario.arrivalLocal}
                 onChange={(e) => update({ arrivalLocal: e.target.value })}
               />
@@ -374,7 +379,12 @@ export default function App() {
                 hint="Optional constraint. Include a date for overnight trips."
               >
                 <input
-                  type="datetime-local"
+                  type={
+                    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/.test(scenario.earliestLocal) ||
+                    !scenario.earliestLocal
+                      ? "datetime-local"
+                      : "text"
+                  }
                   value={scenario.earliestLocal}
                   onChange={(e) => update({ earliestLocal: e.target.value })}
                 />
@@ -714,8 +724,14 @@ export default function App() {
                     className="icon-button danger"
                     aria-label={`Delete saved ${s.name}`}
                     onClick={() => {
-                      setSaved(saved.filter((x) => x.id !== s.id));
-                      setNotice("Saved copy removed. The current draft is unchanged.");
+                      const next = saved.filter((x) => x.id !== s.id);
+                      setSaved(next);
+                      const outcome = pauseSaving ? "paused" : writeWorkspace(scenario, next);
+                      setNotice(
+                        outcome === "saved"
+                          ? "Saved copy removed. The current draft is unchanged."
+                          : "Copy removed from this tab. Complete inputs and restore device saving to keep this change after reload.",
+                      );
                     }}
                   >
                     <Trash2 size={16} />

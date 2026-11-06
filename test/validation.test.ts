@@ -111,3 +111,8 @@ describe("Zod scenario boundaries", () => {
     },
   );
 });
+
+it("rejects an export whose UTF-8 bytes exceed the import file limit", () => {
+  const scenario = { ...airportDemo(), extension: "😀".repeat(130_000) };
+  expect(() => exportScenario(scenario)).toThrow(/too large to export/);
+});

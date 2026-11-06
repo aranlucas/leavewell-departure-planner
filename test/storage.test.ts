@@ -89,3 +89,27 @@ it("retains incomplete date text in a structurally valid editor draft", () => {
     JSON.stringify({ draft: scenario, saved: [] }),
   );
 });
+
+it.each(["malformed", "over capacity"])(
+  "rejects a %s saved collection before replacing good bytes",
+  (kind) => {
+    const storage = mockStorage("retained");
+    const draft = airportDemo();
+    const saved =
+      kind === "malformed"
+        ? [{ ...draft, confidence: NaN }]
+        : Array.from({ length: 21 }, airportDemo);
+    expect(persistWorkspace(draft, saved)).toBe(false);
+    expect(storage.setItem).not.toHaveBeenCalled();
+  },
+);
+
+it("keeps local workspace saves independent of the portable export byte limit", () => {
+  const storage = mockStorage(null);
+  const draft = { ...airportDemo(), extension: "😀".repeat(130_000) };
+  expect(persistWorkspace(draft, [draft])).toBe(true);
+  expect(storage.setItem).toHaveBeenCalledWith(
+    STORAGE_KEY,
+    JSON.stringify({ draft, saved: [draft] }),
+  );
+});
